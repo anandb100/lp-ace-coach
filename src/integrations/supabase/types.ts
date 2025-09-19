@@ -14,7 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          file_url: string | null
+          filename: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          file_url?: string | null
+          filename: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          file_url?: string | null
+          filename?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interview_responses: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          improvement_suggestions: string | null
+          leadership_principle: string
+          overall_score: number | null
+          question_number: number
+          question_text: string
+          scores: Json | null
+          session_id: string
+          star_analysis: Json | null
+          transcribed_text: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          improvement_suggestions?: string | null
+          leadership_principle: string
+          overall_score?: number | null
+          question_number: number
+          question_text: string
+          scores?: Json | null
+          session_id: string
+          star_analysis?: Json | null
+          transcribed_text?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          improvement_suggestions?: string | null
+          leadership_principle?: string
+          overall_score?: number | null
+          question_number?: number
+          question_text?: string
+          scores?: Json | null
+          session_id?: string
+          star_analysis?: Json | null
+          transcribed_text?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_sessions: {
+        Row: {
+          company: string | null
+          completed_at: string | null
+          created_at: string
+          current_question_index: number | null
+          id: string
+          job_title: string | null
+          selected_principles: Json | null
+          status: string
+          total_score: number | null
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_question_index?: number | null
+          id?: string
+          job_title?: string | null
+          selected_principles?: Json | null
+          status?: string
+          total_score?: number | null
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_question_index?: number | null
+          id?: string
+          job_title?: string | null
+          selected_principles?: Json | null
+          status?: string
+          total_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      leadership_principles: {
+        Row: {
+          description: string
+          id: string
+          key_behaviors: string[]
+          title: string
+        }
+        Insert: {
+          description: string
+          id: string
+          key_behaviors: string[]
+          title: string
+        }
+        Update: {
+          description?: string
+          id?: string
+          key_behaviors?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
