@@ -123,9 +123,17 @@ const Index = () => {
   const [answers, setAnswers] = useState<Array<{audioBlob: Blob; transcript: string}>>([]);
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [currentScores, setCurrentScores] = useState(generateMockScores());
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [aiQuestions, setAiQuestions] = useState<any[]>([]);
 
   const handleFilesUploaded = (files: UploadedFile[]) => {
     setUploadedFiles(files);
+  };
+
+  const handleDocumentAnalysis = (result: any) => {
+    setAnalysisResult(result);
+    setAiQuestions(result.questions || mockQuestions);
+    navigateToStep("principles");
   };
 
   const handlePrinciplesSelected = (principles: LeadershipPrinciple[]) => {
@@ -141,7 +149,8 @@ const Index = () => {
   };
 
   const handleAnalysisNext = () => {
-    if (currentQuestionIndex < mockQuestions.length - 1) {
+    const questionsToUse = aiQuestions.length > 0 ? aiQuestions : mockQuestions;
+    if (currentQuestionIndex < questionsToUse.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setCurrentStep("questions");
     } else {
@@ -166,12 +175,13 @@ const Index = () => {
       {currentStep === "upload" && (
         <DocumentUpload 
           onFilesUploaded={handleFilesUploaded}
-          onNext={() => navigateToStep("principles")}
+          onNext={handleDocumentAnalysis}
         />
       )}
       
       {currentStep === "principles" && (
         <LeadershipPrinciples
+          analysisResult={analysisResult}
           onPrinciplesSelected={handlePrinciplesSelected}
           onNext={() => navigateToStep("questions")}
         />
@@ -179,9 +189,9 @@ const Index = () => {
       
       {currentStep === "questions" && (
         <InterviewQuestion
-          question={mockQuestions[currentQuestionIndex]}
+          question={(aiQuestions.length > 0 ? aiQuestions : mockQuestions)[currentQuestionIndex]}
           questionNumber={currentQuestionIndex + 1}
-          totalQuestions={mockQuestions.length}
+          totalQuestions={(aiQuestions.length > 0 ? aiQuestions : mockQuestions).length}
           onAnswerSubmitted={handleAnswerSubmitted}
           onNext={handleAnalysisNext}
         />
@@ -190,12 +200,12 @@ const Index = () => {
       {currentStep === "analysis" && (
         <AnalysisResults
           questionNumber={currentQuestionIndex + 1}
-          totalQuestions={mockQuestions.length}
+          totalQuestions={(aiQuestions.length > 0 ? aiQuestions : mockQuestions).length}
           transcript={currentTranscript}
           scores={currentScores}
           overallScore={calculateOverallScore(currentScores)}
           onNext={handleAnalysisNext}
-          isLastQuestion={currentQuestionIndex === mockQuestions.length - 1}
+          isLastQuestion={currentQuestionIndex === (aiQuestions.length > 0 ? aiQuestions : mockQuestions).length - 1}
         />
       )}
 

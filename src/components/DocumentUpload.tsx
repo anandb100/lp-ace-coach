@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { FileText, Upload, CheckCircle, X, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UploadedFile {
   id: string;
@@ -16,12 +17,13 @@ interface UploadedFile {
 
 interface DocumentUploadProps {
   onFilesUploaded: (files: UploadedFile[]) => void;
-  onNext: () => void;
+  onNext: (analysisResult: any) => void;
 }
 
 const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -83,6 +85,58 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
   };
 
   const canProceed = uploadedFiles.length >= 2;
+
+  const handleAnalyzeDocuments = async () => {
+    if (uploadedFiles.length < 2) return;
+
+    setIsAnalyzing(true);
+    
+    try {
+      // Read file contents
+      const resumeFile = uploadedFiles.find(f => f.type === "resume");
+      const jobDescFile = uploadedFiles.find(f => f.type === "jobDescription");
+      
+      if (!resumeFile || !jobDescFile) {
+        throw new Error("Both resume and job description are required");
+      }
+
+      const resumeContent = await resumeFile.file.text();
+      const jobDescriptionContent = await jobDescFile.file.text();
+
+      console.log('Calling OpenAI analysis...');
+      
+      const { data, error } = await supabase.functions.invoke('analyze-documents', {
+        body: {
+          resumeContent,
+          jobDescriptionContent
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      console.log('Analysis complete:', data);
+      
+      toast({
+        title: "Analysis Complete",
+        description: "Documents analyzed successfully with AI",
+      });
+
+      onNext(data);
+      
+    } catch (error) {
+      console.error('Error analyzing documents:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze documents. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-4">
@@ -174,11 +228,12 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
             {canProceed && (
               <div className="flex justify-center pt-4">
                 <Button 
-                  onClick={onNext}
+                  onClick={handleAnalyzeDocuments}
                   size="lg"
                   className="bg-gradient-primary hover:shadow-elegant transition-all duration-300"
+                  disabled={isAnalyzing}
                 >
-                  Analyze Documents & Continue
+                  {isAnalyzing ? "Analyzing with AI..." : "Analyze Documents & Continue"}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>

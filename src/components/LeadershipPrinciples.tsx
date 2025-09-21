@@ -14,6 +14,7 @@ interface LeadershipPrinciple {
 }
 
 interface LeadershipPrinciplesProps {
+  analysisResult?: any;
   onPrinciplesSelected: (principles: LeadershipPrinciple[]) => void;
   onNext: () => void;
 }
@@ -57,9 +58,11 @@ const mockPrinciples: LeadershipPrinciple[] = [
   }
 ];
 
-const LeadershipPrinciples = ({ onPrinciplesSelected, onNext }: LeadershipPrinciplesProps) => {
-  const [selectedPrinciples] = useState<LeadershipPrinciple[]>(mockPrinciples.slice(0, 5));
-  const [analysisComplete, setAnalysisComplete] = useState(false);
+const LeadershipPrinciples = ({ analysisResult, onPrinciplesSelected, onNext }: LeadershipPrinciplesProps) => {
+  const [selectedPrinciples] = useState<LeadershipPrinciple[]>(
+    analysisResult?.principles || mockPrinciples.slice(0, 5)
+  );
+  const [analysisComplete, setAnalysisComplete] = useState(!!analysisResult);
 
   // Simulate analysis progress
   const [progress, setProgress] = useState(0);
