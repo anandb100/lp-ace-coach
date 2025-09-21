@@ -60,7 +60,7 @@ const mockPrinciples: LeadershipPrinciple[] = [
 
 const LeadershipPrinciples = ({ analysisResult, onPrinciplesSelected, onNext }: LeadershipPrinciplesProps) => {
   const [selectedPrinciples] = useState<LeadershipPrinciple[]>(
-    analysisResult?.principles || mockPrinciples.slice(0, 5)
+    (analysisResult?.principles || mockPrinciples.slice(0, 5)).sort((a, b) => b.relevanceScore - a.relevanceScore)
   );
   const [analysisComplete, setAnalysisComplete] = useState(!!analysisResult);
 

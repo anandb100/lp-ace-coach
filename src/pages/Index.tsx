@@ -3,9 +3,10 @@ import Hero from "@/components/Hero";
 import DocumentUpload from "@/components/DocumentUpload";
 import LeadershipPrinciples from "@/components/LeadershipPrinciples";
 import InterviewQuestion from "@/components/InterviewQuestion";
-import AnalysisResults from "@/components/AnalysisResults";
+import QuestionFeedback from "@/components/QuestionFeedback";
+import FinalResults from "@/components/FinalResults";
 
-type Step = "hero" | "upload" | "principles" | "questions" | "analysis" | "final";
+type Step = "hero" | "upload" | "principles" | "questions" | "feedback" | "final";
 
 interface UploadedFile {
   id: string;
@@ -87,7 +88,7 @@ const mockQuestions = [
   }
 ];
 
-// Mock analysis scores
+// Mock analysis scores and feedback data
 const generateMockScores = () => [
   {
     category: "STAR Structure",
@@ -115,6 +116,37 @@ const generateMockScores = () => [
   }
 ];
 
+const generateMockSTARAnalysis = () => ({
+  situation: {
+    score: Math.floor(Math.random() * 15) + 80,
+    feedback: "Clear context provided with good background details."
+  },
+  task: {
+    score: Math.floor(Math.random() * 20) + 75,
+    feedback: "Task was well-defined but could be more specific about scope."
+  },
+  action: {
+    score: Math.floor(Math.random() * 25) + 70,
+    feedback: "Actions described but need more detail on your specific contributions."
+  },
+  result: {
+    score: Math.floor(Math.random() * 30) + 65,
+    feedback: "Results mentioned but lack quantifiable metrics."
+  }
+});
+
+const generateMockStrengths = () => [
+  "Clear structure following STAR format",
+  "Good demonstration of problem-solving skills",
+  "Shows leadership and initiative"
+];
+
+const generateMockImprovements = () => [
+  "Include specific metrics and numbers to quantify your impact",
+  "Provide more details about the challenges you personally overcame",
+  "Explain the long-term impact of your actions"
+];
+
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<Step>("hero");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -123,8 +155,12 @@ const Index = () => {
   const [answers, setAnswers] = useState<Array<{audioBlob: Blob; transcript: string}>>([]);
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [currentScores, setCurrentScores] = useState(generateMockScores());
+  const [currentSTARAnalysis, setCurrentSTARAnalysis] = useState(generateMockSTARAnalysis());
+  const [currentStrengths, setCurrentStrengths] = useState(generateMockStrengths());
+  const [currentImprovements, setCurrentImprovements] = useState(generateMockImprovements());
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [aiQuestions, setAiQuestions] = useState<any[]>([]);
+  const [questionResults, setQuestionResults] = useState<Array<{questionNumber: number; principle: string; question: string; score: number; keyImprovements: string[]}>>([]);
 
   const handleFilesUploaded = (files: UploadedFile[]) => {
     setUploadedFiles(files);
@@ -144,11 +180,36 @@ const Index = () => {
     const newAnswers = [...answers, answer];
     setAnswers(newAnswers);
     setCurrentTranscript(answer.transcript);
-    setCurrentScores(generateMockScores());
-    setCurrentStep("analysis");
+    
+    // Generate new feedback data for this question
+    const newScores = generateMockScores();
+    const newSTARAnalysis = generateMockSTARAnalysis();
+    const newStrengths = generateMockStrengths();
+    const newImprovements = generateMockImprovements();
+    
+    setCurrentScores(newScores);
+    setCurrentSTARAnalysis(newSTARAnalysis);
+    setCurrentStrengths(newStrengths);
+    setCurrentImprovements(newImprovements);
+    
+    // Store question result for final summary
+    const questionsToUse = aiQuestions.length > 0 ? aiQuestions : mockQuestions;
+    const currentQuestion = questionsToUse[currentQuestionIndex];
+    const overallScore = Math.round(newScores.reduce((sum, score) => sum + score.score, 0) / newScores.length);
+    
+    const questionResult = {
+      questionNumber: currentQuestionIndex + 1,
+      principle: currentQuestion.principle,
+      question: currentQuestion.question,
+      score: overallScore,
+      keyImprovements: newImprovements
+    };
+    
+    setQuestionResults(prev => [...prev, questionResult]);
+    setCurrentStep("feedback");
   };
 
-  const handleAnalysisNext = () => {
+  const handleFeedbackNext = () => {
     const questionsToUse = aiQuestions.length > 0 ? aiQuestions : mockQuestions;
     if (currentQuestionIndex < questionsToUse.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -193,46 +254,39 @@ const Index = () => {
           questionNumber={currentQuestionIndex + 1}
           totalQuestions={(aiQuestions.length > 0 ? aiQuestions : mockQuestions).length}
           onAnswerSubmitted={handleAnswerSubmitted}
-          onNext={handleAnalysisNext}
+          onNext={handleFeedbackNext}
         />
       )}
       
-      {currentStep === "analysis" && (
-        <AnalysisResults
+      {currentStep === "feedback" && (
+        <QuestionFeedback
           questionNumber={currentQuestionIndex + 1}
           totalQuestions={(aiQuestions.length > 0 ? aiQuestions : mockQuestions).length}
           transcript={currentTranscript}
           scores={currentScores}
           overallScore={calculateOverallScore(currentScores)}
-          onNext={handleAnalysisNext}
+          starAnalysis={currentSTARAnalysis}
+          strengths={currentStrengths}
+          improvements={currentImprovements}
+          onNext={handleFeedbackNext}
           isLastQuestion={currentQuestionIndex === (aiQuestions.length > 0 ? aiQuestions : mockQuestions).length - 1}
         />
       )}
 
       {currentStep === "final" && (
-        <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-6">Interview Complete! 🎉</h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              You've successfully completed all 5 questions. Review your performance and start preparing for your Amazon interview!
-            </p>
-            <div className="space-y-4">
-              <button 
-                onClick={() => {
-                  // Reset state for new session
-                  setCurrentStep("hero");
-                  setCurrentQuestionIndex(0);
-                  setAnswers([]);
-                  setUploadedFiles([]);
-                  setSelectedPrinciples([]);
-                }}
-                className="bg-gradient-primary text-white px-8 py-3 rounded-lg hover:shadow-elegant transition-all duration-300"
-              >
-                Start New Session
-              </button>
-            </div>
-          </div>
-        </div>
+        <FinalResults
+          overallScore={Math.round(questionResults.reduce((sum, result) => sum + result.score, 0) / questionResults.length)}
+          questionResults={questionResults}
+          onStartNew={() => {
+            // Reset state for new session
+            setCurrentStep("hero");
+            setCurrentQuestionIndex(0);
+            setAnswers([]);
+            setUploadedFiles([]);
+            setSelectedPrinciples([]);
+            setQuestionResults([]);
+          }}
+        />
       )}
 
       {/* Navigation Helper (hidden in production) */}
@@ -244,7 +298,7 @@ const Index = () => {
             <button onClick={() => navigateToStep("upload")} className="px-2 py-1 text-xs bg-gray-100 rounded">Upload</button>
             <button onClick={() => navigateToStep("principles")} className="px-2 py-1 text-xs bg-gray-100 rounded">Principles</button>
             <button onClick={() => navigateToStep("questions")} className="px-2 py-1 text-xs bg-gray-100 rounded">Questions</button>
-            <button onClick={() => navigateToStep("analysis")} className="px-2 py-1 text-xs bg-gray-100 rounded">Analysis</button>
+            <button onClick={() => navigateToStep("feedback")} className="px-2 py-1 text-xs bg-gray-100 rounded">Feedback</button>
             <button onClick={() => navigateToStep("final")} className="px-2 py-1 text-xs bg-gray-100 rounded">Final</button>
           </div>
         </div>
