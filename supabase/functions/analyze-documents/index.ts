@@ -28,7 +28,7 @@ serve(async (req) => {
     You are an expert Amazon interview coach. Analyze the following job description and resume to:
     
     1. Identify the 5 most relevant Amazon Leadership Principles for this role
-    2. Generate 5 specific behavioral interview questions based on these principles
+    2. Generate 3 specific behavioral interview questions based on these principles
     3. Provide relevance scores (1-100) for each principle based on the job requirements
     
     Job Description:
