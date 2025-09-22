@@ -8,20 +8,36 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Analyze-documents function called');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { resumeContent, jobDescriptionContent } = await req.json();
+    console.log('Reading request body...');
+    const requestBody = await req.json();
+    console.log('Request body keys:', Object.keys(requestBody));
     
+    const { resumeContent, jobDescriptionContent } = requestBody;
+    
+    if (!resumeContent || !jobDescriptionContent) {
+      console.error('Missing content:', { hasResume: !!resumeContent, hasJobDesc: !!jobDescriptionContent });
+      throw new Error('Both resume and job description content are required');
+    }
+    
+    console.log('Resume content length:', resumeContent.length);
+    console.log('Job description content length:', jobDescriptionContent.length);
     console.log('Analyzing documents with OpenAI...');
     
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
+      console.error('OpenAI API key not found in environment');
       throw new Error('OpenAI API key not found');
     }
+    console.log('OpenAI API key found');
 
     // Analyze job description to identify relevant leadership principles and generate questions
     const analysisPrompt = `
@@ -83,6 +99,7 @@ serve(async (req) => {
     }
     `;
 
+    console.log('Making OpenAI API request...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -106,26 +123,39 @@ serve(async (req) => {
       }),
     });
 
+    console.log('OpenAI API response status:', response.status);
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('OpenAI API error details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
+    console.log('Parsing OpenAI response...');
     const aiResponse = await response.json();
-    console.log('OpenAI response received');
+    console.log('OpenAI response received, parsing content...');
     
-    const analysisResult = JSON.parse(aiResponse.choices[0].message.content);
+    let analysisResult;
+    try {
+      analysisResult = JSON.parse(aiResponse.choices[0].message.content);
+      console.log('Successfully parsed analysis result');
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError);
+      console.error('Raw content:', aiResponse.choices[0].message.content);
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
 
+    console.log('Returning successful response');
     return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in analyze-documents function:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: error.message,
-      details: 'Failed to analyze documents with OpenAI'
+      details: 'Failed to analyze documents with OpenAI',
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
