@@ -87,7 +87,13 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
   const canProceed = uploadedFiles.length >= 2;
 
   const handleAnalyzeDocuments = async () => {
-    if (uploadedFiles.length < 2) return;
+    console.log('handleAnalyzeDocuments called');
+    console.log('uploadedFiles:', uploadedFiles);
+    
+    if (uploadedFiles.length < 2) {
+      console.log('Not enough files uploaded:', uploadedFiles.length);
+      return;
+    }
 
     setIsAnalyzing(true);
     
@@ -96,14 +102,26 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
       const resumeFile = uploadedFiles.find(f => f.type === "resume");
       const jobDescFile = uploadedFiles.find(f => f.type === "jobDescription");
       
+      console.log('Found resume file:', !!resumeFile);
+      console.log('Found job desc file:', !!jobDescFile);
+      console.log('Resume file details:', resumeFile);
+      console.log('Job desc file details:', jobDescFile);
+      
       if (!resumeFile || !jobDescFile) {
+        console.error('Missing files - resume:', !!resumeFile, 'jobDesc:', !!jobDescFile);
         throw new Error("Both resume and job description are required");
       }
 
+      console.log('Reading file contents...');
       const resumeContent = await resumeFile.file.text();
       const jobDescriptionContent = await jobDescFile.file.text();
 
-      console.log('Calling OpenAI analysis...');
+      console.log('Resume content length:', resumeContent.length);
+      console.log('Job desc content length:', jobDescriptionContent.length);
+      console.log('Resume content preview:', resumeContent.substring(0, 200));
+      console.log('Job desc content preview:', jobDescriptionContent.substring(0, 200));
+
+      console.log('Calling supabase function...');
       
       const { data, error } = await supabase.functions.invoke('analyze-documents', {
         body: {
@@ -112,8 +130,10 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
         }
       });
 
+      console.log('Supabase response:', { data, error });
+
       if (error) {
-        console.error('Supabase function error:', error);
+        console.error('Supabase function error details:', error);
         throw error;
       }
 
@@ -128,6 +148,11 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
       
     } catch (error) {
       console.error('Error analyzing documents:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze documents. Please try again.",
