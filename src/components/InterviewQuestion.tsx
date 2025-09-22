@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Mic, Square, Play, Pause, RotateCcw, ArrowRight } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Mic, Square, ArrowRight, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Question {
   id: string;
@@ -38,28 +40,43 @@ const InterviewQuestion = ({
   const [hasRecorded, setHasRecorded] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isGettingFeedback, setIsGettingFeedback] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 44100,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       const chunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = (event) => {
         chunks.push(event.data);
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
         setAudioBlob(blob);
         setHasRecorded(true);
         stream.getTracks().forEach(track => track.stop());
+        
+        // Automatically transcribe the audio
+        await transcribeAudio(blob);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -90,41 +107,86 @@ const InterviewQuestion = ({
     }
   };
 
-  const playRecording = () => {
-    if (audioBlob) {
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      // Convert blob to base64
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 0x8000;
       
-      audio.onplay = () => setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
-      audio.onpause = () => setIsPlaying(false);
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
       
-      audio.play();
+      const base64Audio = btoa(binary);
+
+      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audio: base64Audio }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to transcribe audio');
+      }
+
+      setTranscript(data.text || 'No transcription available');
+      
+      toast({
+        title: "Transcription Complete",
+        description: "Your response has been converted to text.",
+      });
+
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast({
+        title: "Transcription Error",
+        description: "Failed to convert speech to text. You can type your response directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
-  const pauseRecording = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
+  const getAIFeedback = async () => {
+    if (!transcript.trim()) {
+      toast({
+        title: "No Response",
+        description: "Please record or type your response first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGettingFeedback(true);
+    try {
+      // This would call an AI feedback function - for now, just show a placeholder
+      toast({
+        title: "AI Feedback",
+        description: "This feature will provide feedback on your response structure and content.",
+      });
+      
+      // Here you would implement the AI feedback functionality
+      // Similar to how you call the analyze-documents function
+      
+    } catch (error) {
+      toast({
+        title: "Feedback Error",
+        description: "Failed to get AI feedback. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingFeedback(false);
     }
   };
 
-  const resetRecording = () => {
-    setHasRecorded(false);
-    setAudioBlob(null);
-    setRecordingTime(0);
-    setIsPlaying(false);
-  };
-
-  const submitAnswer = () => {
-    if (audioBlob) {
-      // Mock transcript for demo
-      const mockTranscript = "This is a sample transcript of the recorded answer. In a real application, this would be generated using speech-to-text technology.";
-      onAnswerSubmitted({ audioBlob, transcript: mockTranscript });
-      onNext();
+  const handleNextQuestion = () => {
+    if (audioBlob && transcript) {
+      onAnswerSubmitted({ audioBlob, transcript });
     }
+    onNext();
   };
 
   const formatTime = (seconds: number) => {
@@ -155,108 +217,114 @@ const InterviewQuestion = ({
         {/* Question Card */}
         <Card className="shadow-card mb-8">
           <CardHeader>
-            <CardTitle className="text-xl">Interview Question</CardTitle>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Interview Question
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Focus: {question.principle}</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-4 bg-muted/30 rounded-lg">
               <p className="text-lg font-medium mb-2">{question.question}</p>
-              <p className="text-muted-foreground">{question.context}</p>
             </div>
 
-            {/* STAR Framework Guidance */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-3 bg-primary/5 rounded-lg border-l-4 border-primary">
-                <h4 className="font-semibold text-sm mb-1">Situation</h4>
-                <p className="text-xs text-muted-foreground">{question.starFramework.situation}</p>
-              </div>
-              <div className="p-3 bg-secondary/5 rounded-lg border-l-4 border-secondary">
-                <h4 className="font-semibold text-sm mb-1">Task</h4>
-                <p className="text-xs text-muted-foreground">{question.starFramework.task}</p>
-              </div>
-              <div className="p-3 bg-accent/5 rounded-lg border-l-4 border-accent">
-                <h4 className="font-semibold text-sm mb-1">Action</h4>
-                <p className="text-xs text-muted-foreground">{question.starFramework.action}</p>
-              </div>
-              <div className="p-3 bg-success/5 rounded-lg border-l-4 border-success">
-                <h4 className="font-semibold text-sm mb-1">Result</h4>
-                <p className="text-xs text-muted-foreground">{question.starFramework.result}</p>
-              </div>
+            {/* Follow-up Questions */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Follow-up Questions:</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>• What specific actions did you take to ensure the customer's voice was heard?</li>
+                <li>• How did you measure the impact of your advocacy on customer satisfaction?</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
 
-        {/* Recording Interface */}
+        {/* Response Interface */}
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mic className="h-5 w-5" />
-              Record Your Response
+              Your Response
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="text-center space-y-4">
-              {/* Recording Status */}
-              <div className="text-2xl font-mono">
-                {formatTime(recordingTime)}
-              </div>
+            {/* Recording Controls */}
+            <div className="flex justify-center">
+              {!isRecording && !hasRecorded && (
+                <Button
+                  onClick={startRecording}
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                >
+                  <Mic className="mr-2 h-5 w-5" />
+                  Start Recording
+                </Button>
+              )}
 
-              {/* Recording Controls */}
-              <div className="flex justify-center gap-3">
-                {!isRecording && !hasRecorded && (
-                  <Button
-                    onClick={startRecording}
-                    size="lg"
-                    className="bg-gradient-primary hover:shadow-elegant transition-all duration-300"
-                  >
-                    <Mic className="mr-2 h-5 w-5" />
-                    Start Recording
-                  </Button>
-                )}
-
-                {isRecording && (
+              {isRecording && (
+                <div className="text-center space-y-4">
+                  <div className="text-2xl font-mono text-red-600">
+                    {formatTime(recordingTime)}
+                  </div>
                   <Button
                     onClick={stopRecording}
                     size="lg"
                     variant="destructive"
-                    className="animate-pulse"
+                    className="animate-pulse px-8"
                   >
                     <Square className="mr-2 h-4 w-4" />
                     Stop Recording
                   </Button>
-                )}
+                </div>
+              )}
+            </div>
 
-                {hasRecorded && !isRecording && (
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={isPlaying ? pauseRecording : playRecording}
-                      variant="outline"
-                    >
-                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    </Button>
-                    <Button onClick={resetRecording} variant="outline">
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={submitAnswer}
-                      className="bg-gradient-primary hover:shadow-elegant transition-all duration-300"
-                    >
-                      Submit Answer
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+            {/* Transcript Text Area */}
+            <div className="space-y-2">
+              <Textarea
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                placeholder="Your response will appear here after recording, or you can type directly..."
+                className="min-h-[200px] resize-none"
+                disabled={isTranscribing}
+              />
+              {isTranscribing && (
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                  Converting speech to text...
+                </p>
+              )}
+            </div>
 
-              {/* Recording Tips */}
-              <div className="text-sm text-muted-foreground max-w-md mx-auto">
-                <p>💡 Tips for a great answer:</p>
-                <ul className="list-disc list-inside text-left space-y-1 mt-2">
-                  <li>Structure your response using the STAR method</li>
-                  <li>Speak clearly and at a moderate pace</li>
-                  <li>Aim for 2-4 minutes per response</li>
-                  <li>Include specific metrics and outcomes</li>
-                </ul>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-center">
+              <Button
+                onClick={getAIFeedback}
+                variant="outline"
+                disabled={!transcript.trim() || isGettingFeedback}
+                className="px-6"
+              >
+                {isGettingFeedback ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                    Getting Feedback...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Get AI Feedback
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleNextQuestion}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6"
+                disabled={!transcript.trim()}
+              >
+                Next Question
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>
