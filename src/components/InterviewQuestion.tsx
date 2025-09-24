@@ -162,19 +162,101 @@ const InterviewQuestion = ({
 
     setIsGettingFeedback(true);
     try {
-      // This would call an AI feedback function - for now, just show a placeholder
-      toast({
-        title: "AI Feedback",
-        description: "This feature will provide feedback on your response structure and content.",
+      // First, save the response to the database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get the current session to save the response
+      const { data: sessions } = await supabase
+        .from('interview_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'in_progress')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!sessions || sessions.length === 0) {
+        throw new Error('No active interview session found');
+      }
+
+      const currentSession = sessions[0];
+
+      // Get user's documents (resume and job description)
+      const { data: documents } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', user.id);
+
+      const resume = documents?.find(doc => doc.type === 'resume');
+      const jobDescription = documents?.find(doc => doc.type === 'job_description');
+
+      if (!resume || !jobDescription) {
+        throw new Error('Resume and job description are required for AI feedback');
+      }
+
+      // Save the response to interview_responses table
+      const { error: insertError } = await supabase
+        .from('interview_responses')
+        .insert({
+          session_id: currentSession.id,
+          user_id: user.id,
+          question_number: questionNumber,
+          question_text: question.question,
+          leadership_principle: question.principle,
+          transcribed_text: transcript,
+          audio_url: audioBlob ? 'stored_separately' : null
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Call the AI feedback function
+      const { data: feedbackData, error: feedbackError } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          questionText: question.question,
+          userResponse: transcript,
+          resumeContent: resume.content,
+          jobDescriptionContent: jobDescription.content,
+          leadershipPrinciple: question.principle
+        }
       });
-      
-      // Here you would implement the AI feedback functionality
-      // Similar to how you call the analyze-documents function
+
+      if (feedbackError) {
+        throw new Error(feedbackError.message || 'Failed to get AI feedback');
+      }
+
+      // Store the feedback in the database
+      const { error: updateError } = await supabase
+        .from('interview_responses')
+        .update({
+          overall_score: feedbackData.overallScore.score,
+          star_analysis: feedbackData.starAnalysis,
+          feedback: JSON.stringify(feedbackData),
+          improvement_suggestions: JSON.stringify(feedbackData.jobAlignment)
+        })
+        .eq('session_id', currentSession.id)
+        .eq('question_number', questionNumber);
+
+      if (updateError) {
+        console.error('Failed to update response with feedback:', updateError);
+      }
+
+      toast({
+        title: "AI Feedback Generated",
+        description: "Your response has been analyzed and feedback is ready.",
+      });
+
+      // Navigate to feedback view (you'll need to implement this navigation)
+      // For now, just show success message
       
     } catch (error) {
+      console.error('Feedback error:', error);
       toast({
         title: "Feedback Error",
-        description: "Failed to get AI feedback. Please try again.",
+        description: error.message || "Failed to get AI feedback. Please try again.",
         variant: "destructive",
       });
     } finally {

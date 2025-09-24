@@ -4,13 +4,6 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle, Lightbulb, ArrowRight } from "lucide-react";
 
-interface FeedbackScore {
-  category: string;
-  score: number;
-  feedback: string;
-  improvement: string;
-}
-
 interface STARAnalysis {
   situation: { score: number; feedback: string; };
   task: { score: number; feedback: string; };
@@ -18,15 +11,26 @@ interface STARAnalysis {
   result: { score: number; feedback: string; };
 }
 
+interface SuggestedAnswer {
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+}
+
+interface OverallScore {
+  score: number;
+  feedback: string;
+}
+
 interface QuestionFeedbackProps {
   questionNumber: number;
   totalQuestions: number;
   transcript: string;
-  scores: FeedbackScore[];
-  overallScore: number;
+  overallScore: OverallScore;
   starAnalysis: STARAnalysis;
-  strengths: string[];
-  improvements: string[];
+  suggestedAnswer: SuggestedAnswer;
+  jobAlignment: string[];
   onNext: () => void;
   isLastQuestion: boolean;
 }
@@ -35,11 +39,10 @@ const QuestionFeedback = ({
   questionNumber,
   totalQuestions,
   transcript,
-  scores,
   overallScore,
   starAnalysis,
-  strengths,
-  improvements,
+  suggestedAnswer,
+  jobAlignment,
   onNext,
   isLastQuestion
 }: QuestionFeedbackProps) => {
@@ -74,95 +77,80 @@ const QuestionFeedback = ({
           </CardContent>
         </Card>
 
-        {/* Overall Score */}
-        <Card className="shadow-card text-center">
-          <CardContent className="pt-6">
+        {/* Section 1: Overall Score */}
+        <Card className="shadow-card text-center bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-700">Section 1: Overall Score</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2">
             <div className="w-32 h-32 mx-auto mb-4 relative">
-              <div className="w-full h-full rounded-full bg-gradient-primary flex items-center justify-center text-white">
-                <span className="text-3xl font-bold">{overallScore}</span>
+              <div className="w-full h-full rounded-full bg-blue-600 flex items-center justify-center text-white">
+                <span className="text-3xl font-bold">{overallScore.score}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Overall Score</h3>
-            <Badge variant={getScoreVariant(overallScore)} className="text-sm">
-              {overallScore >= 80 ? "Strong Performance" : overallScore >= 60 ? "Good Performance" : "Needs Improvement"}
-            </Badge>
+            <h3 className="text-lg font-semibold mb-2">{overallScore.score}/100</h3>
+            <p className="text-blue-800 text-sm font-medium">{overallScore.feedback}</p>
           </CardContent>
         </Card>
 
-        {/* STAR Framework Analysis */}
-        <Card className="shadow-card">
+        {/* Section 2: STAR Framework Analysis */}
+        <Card className="shadow-card bg-green-50 border-green-200">
           <CardHeader>
-            <CardTitle>STAR Framework Analysis</CardTitle>
+            <CardTitle className="text-green-700">Section 2: STAR Framework Analysis</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {Object.entries(starAnalysis).map(([key, analysis]) => (
               <div key={key} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium capitalize">{key}</h4>
+                  <h4 className="font-medium capitalize text-green-800">{key}</h4>
                   <span className={`font-semibold ${getScoreColor(analysis.score)}`}>
                     {analysis.score}/100
                   </span>
                 </div>
                 <Progress value={analysis.score} className="h-2" />
-                <p className="text-sm text-muted-foreground">{analysis.feedback}</p>
+                <p className="text-sm text-green-700">{analysis.feedback}</p>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* Strengths */}
-        <Card className="shadow-card bg-green-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700">
-              <CheckCircle className="h-5 w-5" />
-              Strengths
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {strengths.map((strength, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm">
-                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2"></div>
-                  <span className="text-green-800">{strength}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Areas for Improvement */}
-        <Card className="shadow-card bg-orange-50 border-orange-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-700">
-              <AlertCircle className="h-5 w-5" />
-              Areas for Improvement
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {improvements.map((improvement, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm">
-                  <div className="w-1.5 h-1.5 bg-orange-600 rounded-full mt-2"></div>
-                  <span className="text-orange-800">{improvement}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Suggestions */}
+        {/* Section 3: Suggested STAR Answer */}
         <Card className="shadow-card bg-purple-50 border-purple-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-purple-700">
               <Lightbulb className="h-5 w-5" />
-              Suggestions for Enhancement
+              Section 3: Suggested STAR Answer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(suggestedAnswer).map(([key, value]) => (
+              <div key={key} className="space-y-2">
+                <h4 className="font-medium capitalize text-purple-800">{key}:</h4>
+                <p className="text-sm text-purple-700 bg-white/60 p-3 rounded-md border border-purple-200">
+                  {value}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Section 4: Job Alignment */}
+        <Card className="shadow-card bg-orange-50 border-orange-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <CheckCircle className="h-5 w-5" />
+              Section 4: Why this answer aligns to the JD
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-purple-800">
-              Consider adding specific metrics like 'reduced processing time by 40%' or 'saved the 
-              team 20 hours per week' to make your impact more tangible.
-            </p>
+            <ul className="space-y-3">
+              {jobAlignment.map((alignment, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <div className="w-1.5 h-1.5 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-orange-800">{alignment}</span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
 

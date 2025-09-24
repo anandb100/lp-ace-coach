@@ -263,11 +263,19 @@ const Index = () => {
           questionNumber={currentQuestionIndex + 1}
           totalQuestions={(aiQuestions.length > 0 ? aiQuestions : mockQuestions).length}
           transcript={currentTranscript}
-          scores={currentScores}
-          overallScore={calculateOverallScore(currentScores)}
+          overallScore={{ score: calculateOverallScore(currentScores), feedback: "Mock feedback - needs improvement" }}
           starAnalysis={currentSTARAnalysis}
-          strengths={currentStrengths}
-          improvements={currentImprovements}
+          suggestedAnswer={{
+            situation: "Example situation description with proper context...",
+            task: "Example task with clear objectives...", 
+            action: "Example actions taken with specific details...",
+            result: "Example results with quantifiable metrics..."
+          }}
+          jobAlignment={[
+            "Mock alignment point 1 - demonstrates relevant skills",
+            "Mock alignment point 2 - shows required experience", 
+            "Mock alignment point 3 - matches job requirements"
+          ]}
           onNext={handleFeedbackNext}
           isLastQuestion={currentQuestionIndex === (aiQuestions.length > 0 ? aiQuestions : mockQuestions).length - 1}
         />
