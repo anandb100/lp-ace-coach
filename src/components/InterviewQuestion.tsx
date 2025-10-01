@@ -162,101 +162,117 @@ const InterviewQuestion = ({
 
     setIsGettingFeedback(true);
     try {
-      // First, save the response to the database
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Get the current session to save the response
-      const { data: sessions } = await supabase
+      // Use constant dummy user ID for all sessions
+      const DUMMY_USER_ID = '00000000-0000-0000-0000-000000000000';
+      
+      // Create or get the interview session
+      const { data: existingSessions } = await supabase
         .from('interview_sessions')
-        .select('*')
-        .eq('user_id', user.id)
+        .select()
+        .eq('user_id', DUMMY_USER_ID)
         .eq('status', 'in_progress')
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (!sessions || sessions.length === 0) {
-        throw new Error('No active interview session found');
+      let currentSessionId: string;
+      
+      if (existingSessions && existingSessions.length > 0) {
+        currentSessionId = existingSessions[0].id;
+      } else {
+        const sessionId = crypto.randomUUID();
+        const { error: sessionError } = await supabase
+          .from('interview_sessions')
+          .insert({
+            id: sessionId,
+            user_id: DUMMY_USER_ID,
+            status: 'in_progress',
+          });
+
+        if (sessionError) {
+          console.error('Error creating session:', sessionError);
+          toast({
+            title: "Error",
+            description: "Failed to create session.",
+            variant: "destructive",
+          });
+          setIsGettingFeedback(false);
+          return;
+        }
+        currentSessionId = sessionId;
       }
 
-      const currentSession = sessions[0];
-
-      // Get user's documents (resume and job description)
+      // Get resume and job description from database
       const { data: documents } = await supabase
         .from('documents')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('type, content')
+        .eq('user_id', DUMMY_USER_ID)
+        .in('type', ['resume', 'job_description'])
+        .order('created_at', { ascending: false });
 
-      const resume = documents?.find(doc => doc.type === 'resume');
-      const jobDescription = documents?.find(doc => doc.type === 'job_description');
+      const resume = documents?.find(d => d.type === 'resume')?.content || '';
+      const jobDescription = documents?.find(d => d.type === 'job_description')?.content || '';
 
       if (!resume || !jobDescription) {
-        throw new Error('Resume and job description are required for AI feedback');
-      }
-
-      // Save the response to interview_responses table
-      const { error: insertError } = await supabase
-        .from('interview_responses')
-        .insert({
-          session_id: currentSession.id,
-          user_id: user.id,
-          question_number: questionNumber,
-          question_text: question.question,
-          leadership_principle: question.principle,
-          transcribed_text: transcript,
-          audio_url: audioBlob ? 'stored_separately' : null
+        toast({
+          title: "Missing Documents",
+          description: "Please upload your resume and job description first.",
+          variant: "destructive",
         });
-
-      if (insertError) {
-        throw insertError;
+        setIsGettingFeedback(false);
+        return;
       }
 
-      // Call the AI feedback function
-      const { data: feedbackData, error: feedbackError } = await supabase.functions.invoke('analyze-response', {
+      // Call the analyze-response function
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-response', {
         body: {
-          questionText: question.question,
-          userResponse: transcript,
-          resumeContent: resume.content,
-          jobDescriptionContent: jobDescription.content,
-          leadershipPrinciple: question.principle
-        }
+          question: question.question,
+          response: transcript,
+          resume: resume,
+          jobDescription: jobDescription,
+          leadershipPrinciple: question.principle,
+        },
       });
 
-      if (feedbackError) {
-        throw new Error(feedbackError.message || 'Failed to get AI feedback');
+      if (analysisError) {
+        console.error('Error getting AI feedback:', analysisError);
+        toast({
+          title: "Error",
+          description: "Failed to get AI feedback. Please try again.",
+          variant: "destructive",
+        });
+        setIsGettingFeedback(false);
+        return;
       }
 
-      // Store the feedback in the database
-      const { error: updateError } = await supabase
+      // Save the response with feedback
+      const { error: responseError } = await supabase
         .from('interview_responses')
-        .update({
-          overall_score: feedbackData.overallScore.score,
-          star_analysis: feedbackData.starAnalysis,
-          feedback: JSON.stringify(feedbackData),
-          improvement_suggestions: JSON.stringify(feedbackData.jobAlignment)
-        })
-        .eq('session_id', currentSession.id)
-        .eq('question_number', questionNumber);
+        .insert({
+          session_id: currentSessionId,
+          user_id: DUMMY_USER_ID,
+          question_number: questionNumber,
+          question_text: question.question,
+          transcribed_text: transcript,
+          leadership_principle: question.principle,
+          overall_score: analysisData.analysis.overall_score.score,
+          feedback: analysisData.analysis.overall_score.feedback,
+          star_analysis: analysisData.analysis.star_analysis,
+          audio_url: audioBlob ? URL.createObjectURL(audioBlob) : null,
+        });
 
-      if (updateError) {
-        console.error('Failed to update response with feedback:', updateError);
+      if (responseError) {
+        console.error('Error saving response:', responseError);
       }
 
       toast({
         title: "AI Feedback Generated",
-        description: "Your response has been analyzed and feedback is ready.",
+        description: "Your response has been analyzed successfully.",
       });
-
-      // Navigate to feedback view (you'll need to implement this navigation)
-      // For now, just show success message
-      
     } catch (error) {
-      console.error('Feedback error:', error);
+      console.error('Error in getAIFeedback:', error);
       toast({
-        title: "Feedback Error",
-        description: error.message || "Failed to get AI feedback. Please try again.",
+        title: "Error",
+        description: "An unexpected error occurred.",
         variant: "destructive",
       });
     } finally {

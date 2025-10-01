@@ -87,42 +87,67 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
   const canProceed = uploadedFiles.length >= 2;
 
   const handleAnalyzeDocuments = async () => {
-    console.log('handleAnalyzeDocuments called');
-    console.log('uploadedFiles:', uploadedFiles);
-    
     if (uploadedFiles.length < 2) {
-      console.log('Not enough files uploaded:', uploadedFiles.length);
       return;
     }
 
     setIsAnalyzing(true);
     
     try {
+      // Use constant dummy user ID for all sessions
+      const DUMMY_USER_ID = '00000000-0000-0000-0000-000000000000';
+
       // Read file contents
       const resumeFile = uploadedFiles.find(f => f.type === "resume");
       const jobDescFile = uploadedFiles.find(f => f.type === "jobDescription");
       
-      console.log('Found resume file:', !!resumeFile);
-      console.log('Found job desc file:', !!jobDescFile);
-      console.log('Resume file details:', resumeFile);
-      console.log('Job desc file details:', jobDescFile);
-      
       if (!resumeFile || !jobDescFile) {
-        console.error('Missing files - resume:', !!resumeFile, 'jobDesc:', !!jobDescFile);
         throw new Error("Both resume and job description are required");
       }
 
-      console.log('Reading file contents...');
       const resumeContent = await resumeFile.file.text();
       const jobDescriptionContent = await jobDescFile.file.text();
 
-      console.log('Resume content length:', resumeContent.length);
-      console.log('Job desc content length:', jobDescriptionContent.length);
-      console.log('Resume content preview:', resumeContent.substring(0, 200));
-      console.log('Job desc content preview:', jobDescriptionContent.substring(0, 200));
+      // Store documents in database with dummy user ID
+      const { error: resumeError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: DUMMY_USER_ID,
+          type: 'resume',
+          content: resumeContent,
+          filename: resumeFile.name,
+        });
 
-      console.log('Calling supabase function...');
-      
+      if (resumeError) {
+        console.error('Error storing resume:', resumeError);
+        toast({
+          title: "Error",
+          description: "Failed to store resume.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error: jdError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: DUMMY_USER_ID,
+          type: 'job_description',
+          content: jobDescriptionContent,
+          filename: jobDescFile.name,
+        });
+
+      if (jdError) {
+        console.error('Error storing job description:', jdError);
+        toast({
+          title: "Error",
+          description: "Failed to store job description.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Call the analyze-documents function
       const { data, error } = await supabase.functions.invoke('analyze-documents', {
         body: {
           resumeContent,
@@ -130,14 +155,10 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
         }
       });
 
-      console.log('Supabase response:', { data, error });
-
       if (error) {
         console.error('Supabase function error details:', error);
         throw error;
       }
-
-      console.log('Analysis complete:', data);
       
       toast({
         title: "Analysis Complete",
@@ -148,11 +169,6 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
       
     } catch (error) {
       console.error('Error analyzing documents:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze documents. Please try again.",
