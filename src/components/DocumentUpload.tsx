@@ -105,8 +105,14 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
         throw new Error("Both resume and job description are required");
       }
 
-      const resumeContent = await resumeFile.file.text();
-      const jobDescriptionContent = await jobDescFile.file.text();
+      // Read file contents as text
+      let resumeContent = await resumeFile.file.text();
+      let jobDescriptionContent = await jobDescFile.file.text();
+
+      // Clean content to remove problematic characters for PostgreSQL
+      // Replace backslashes and ensure proper encoding
+      resumeContent = resumeContent.replace(/\\/g, '\\\\');
+      jobDescriptionContent = jobDescriptionContent.replace(/\\/g, '\\\\');
 
       // Store documents in database with dummy user ID
       const { error: resumeError } = await supabase
