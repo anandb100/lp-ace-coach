@@ -110,9 +110,16 @@ const DocumentUpload = ({ onFilesUploaded, onNext }: DocumentUploadProps) => {
       let jobDescriptionContent = await jobDescFile.file.text();
 
       // Clean content to remove problematic characters for PostgreSQL
-      // Replace backslashes and ensure proper encoding
-      resumeContent = resumeContent.replace(/\\/g, '\\\\');
-      jobDescriptionContent = jobDescriptionContent.replace(/\\/g, '\\\\');
+      // Strip null bytes and control characters that PostgreSQL text fields cannot store
+      resumeContent = resumeContent
+        .replace(/\0/g, '') // Remove null bytes
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove other control characters
+        .replace(/\\/g, '\\\\'); // Escape backslashes
+      
+      jobDescriptionContent = jobDescriptionContent
+        .replace(/\0/g, '') // Remove null bytes
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove other control characters
+        .replace(/\\/g, '\\\\'); // Escape backslashes
 
       // Store documents in database with dummy user ID
       const { error: resumeError } = await supabase
