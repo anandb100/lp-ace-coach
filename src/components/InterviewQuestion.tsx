@@ -244,6 +244,8 @@ const InterviewQuestion = ({
         return;
       }
 
+      console.log('Analysis data received:', analysisData);
+
       // Save the response with feedback
       const { error: responseError } = await supabase
         .from('interview_responses')
@@ -254,9 +256,9 @@ const InterviewQuestion = ({
           question_text: question.question,
           transcribed_text: transcript,
           leadership_principle: question.principle,
-          overall_score: analysisData.analysis.overall_score.score,
-          feedback: analysisData.analysis.overall_score.feedback,
-          star_analysis: analysisData.analysis.star_analysis,
+          overall_score: analysisData.overallScore.score,
+          feedback: analysisData.overallScore.feedback,
+          star_analysis: analysisData.starAnalysis,
           audio_url: audioBlob ? URL.createObjectURL(audioBlob) : null,
         });
 
