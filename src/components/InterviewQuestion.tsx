@@ -225,10 +225,10 @@ const InterviewQuestion = ({
       // Call the analyze-response function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-response', {
         body: {
-          question: question.question,
-          response: transcript,
-          resume: resume,
-          jobDescription: jobDescription,
+          questionText: question.question,
+          userResponse: transcript,
+          resumeContent: resume,
+          jobDescriptionContent: jobDescription,
           leadershipPrinciple: question.principle,
         },
       });
