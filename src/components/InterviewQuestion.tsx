@@ -25,7 +25,11 @@ interface InterviewQuestionProps {
   question: Question;
   questionNumber: number;
   totalQuestions: number;
-  onAnswerSubmitted: (answer: { audioBlob: Blob; transcript: string }) => void;
+  onAnswerSubmitted: (answer: { 
+    audioBlob: Blob; 
+    transcript: string;
+    analysisData?: any;
+  }) => void;
   onNext: () => void;
 }
 
@@ -269,6 +273,13 @@ const InterviewQuestion = ({
       toast({
         title: "AI Feedback Generated",
         description: "Your response has been analyzed successfully.",
+      });
+
+      // Call onAnswerSubmitted with the analysis data to trigger feedback display
+      onAnswerSubmitted({
+        audioBlob: audioBlob!,
+        transcript,
+        analysisData,
       });
     } catch (error) {
       console.error('Error in getAIFeedback:', error);

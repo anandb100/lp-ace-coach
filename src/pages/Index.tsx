@@ -161,6 +161,7 @@ const Index = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [aiQuestions, setAiQuestions] = useState<any[]>([]);
   const [questionResults, setQuestionResults] = useState<Array<{questionNumber: number; principle: string; question: string; score: number; keyImprovements: string[]}>>([]);
+  const [currentAnalysisData, setCurrentAnalysisData] = useState<any>(null);
 
   const handleFilesUploaded = (files: UploadedFile[]) => {
     setUploadedFiles(files);
@@ -176,36 +177,60 @@ const Index = () => {
     setSelectedPrinciples(principles);
   };
 
-  const handleAnswerSubmitted = (answer: {audioBlob: Blob; transcript: string}) => {
+  const handleAnswerSubmitted = (answer: {audioBlob: Blob; transcript: string; analysisData?: any}) => {
     const newAnswers = [...answers, answer];
     setAnswers(newAnswers);
     setCurrentTranscript(answer.transcript);
     
-    // Generate new feedback data for this question
-    const newScores = generateMockScores();
-    const newSTARAnalysis = generateMockSTARAnalysis();
-    const newStrengths = generateMockStrengths();
-    const newImprovements = generateMockImprovements();
+    // Use real AI feedback data if available, otherwise use mock data
+    if (answer.analysisData) {
+      setCurrentAnalysisData(answer.analysisData);
+      setCurrentScores([]);
+      setCurrentSTARAnalysis(answer.analysisData.starAnalysis);
+      setCurrentStrengths([]);
+      setCurrentImprovements([]);
+      
+      // Store question result for final summary
+      const questionsToUse = aiQuestions.length > 0 ? aiQuestions : mockQuestions;
+      const currentQuestion = questionsToUse[currentQuestionIndex];
+      
+      const questionResult = {
+        questionNumber: currentQuestionIndex + 1,
+        principle: currentQuestion.principle,
+        question: currentQuestion.question,
+        score: answer.analysisData.overallScore.score,
+        keyImprovements: answer.analysisData.suggestedAnswer ? 
+          [`Suggested approach: ${Object.values(answer.analysisData.suggestedAnswer).join(' ')}`] : []
+      };
+      
+      setQuestionResults(prev => [...prev, questionResult]);
+    } else {
+      // Fallback to mock data
+      const newScores = generateMockScores();
+      const newSTARAnalysis = generateMockSTARAnalysis();
+      const newStrengths = generateMockStrengths();
+      const newImprovements = generateMockImprovements();
+      
+      setCurrentScores(newScores);
+      setCurrentSTARAnalysis(newSTARAnalysis);
+      setCurrentStrengths(newStrengths);
+      setCurrentImprovements(newImprovements);
+      
+      const questionsToUse = aiQuestions.length > 0 ? aiQuestions : mockQuestions;
+      const currentQuestion = questionsToUse[currentQuestionIndex];
+      const overallScore = Math.round(newScores.reduce((sum, score) => sum + score.score, 0) / newScores.length);
+      
+      const questionResult = {
+        questionNumber: currentQuestionIndex + 1,
+        principle: currentQuestion.principle,
+        question: currentQuestion.question,
+        score: overallScore,
+        keyImprovements: newImprovements
+      };
+      
+      setQuestionResults(prev => [...prev, questionResult]);
+    }
     
-    setCurrentScores(newScores);
-    setCurrentSTARAnalysis(newSTARAnalysis);
-    setCurrentStrengths(newStrengths);
-    setCurrentImprovements(newImprovements);
-    
-    // Store question result for final summary
-    const questionsToUse = aiQuestions.length > 0 ? aiQuestions : mockQuestions;
-    const currentQuestion = questionsToUse[currentQuestionIndex];
-    const overallScore = Math.round(newScores.reduce((sum, score) => sum + score.score, 0) / newScores.length);
-    
-    const questionResult = {
-      questionNumber: currentQuestionIndex + 1,
-      principle: currentQuestion.principle,
-      question: currentQuestion.question,
-      score: overallScore,
-      keyImprovements: newImprovements
-    };
-    
-    setQuestionResults(prev => [...prev, questionResult]);
     setCurrentStep("feedback");
   };
 
@@ -263,15 +288,15 @@ const Index = () => {
           questionNumber={currentQuestionIndex + 1}
           totalQuestions={(aiQuestions.length > 0 ? aiQuestions : mockQuestions).length}
           transcript={currentTranscript}
-          overallScore={{ score: calculateOverallScore(currentScores), feedback: "Mock feedback - needs improvement" }}
+          overallScore={currentAnalysisData?.overallScore || { score: calculateOverallScore(currentScores), feedback: "Mock feedback - needs improvement" }}
           starAnalysis={currentSTARAnalysis}
-          suggestedAnswer={{
+          suggestedAnswer={currentAnalysisData?.suggestedAnswer || {
             situation: "Example situation description with proper context...",
             task: "Example task with clear objectives...", 
             action: "Example actions taken with specific details...",
             result: "Example results with quantifiable metrics..."
           }}
-          jobAlignment={[
+          jobAlignment={currentAnalysisData?.jobAlignment || [
             "Mock alignment point 1 - demonstrates relevant skills",
             "Mock alignment point 2 - shows required experience", 
             "Mock alignment point 3 - matches job requirements"
