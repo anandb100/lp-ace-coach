@@ -24,8 +24,9 @@ interface LeadershipPrinciple {
   keyBehaviors: string[];
 }
 
-// Mock questions data
+// Mock questions data - 3 questions per principle
 const mockQuestions = [
+  // Customer Obsession
   {
     id: "q1",
     principle: "Customer Obsession",
@@ -39,7 +40,33 @@ const mockQuestions = [
     }
   },
   {
-    id: "q2", 
+    id: "q2",
+    principle: "Customer Obsession",
+    question: "Describe a time when you went above and beyond to help a customer succeed.",
+    context: "Focus on exceeding expectations and building long-term customer relationships.",
+    starFramework: {
+      situation: "What was the customer challenge?",
+      task: "What was expected vs what you did?",
+      action: "How did you exceed expectations?",
+      result: "What was the customer feedback?"
+    }
+  },
+  {
+    id: "q3",
+    principle: "Customer Obsession",
+    question: "Tell me about a time when you had to say no to a customer request. How did you handle it?",
+    context: "Focus on balancing customer needs with business constraints.",
+    starFramework: {
+      situation: "What was the customer asking for?",
+      task: "Why couldn't you fulfill the request?",
+      action: "How did you communicate and offer alternatives?",
+      result: "How did the customer respond?"
+    }
+  },
+  
+  // Ownership
+  {
+    id: "q4", 
     principle: "Ownership",
     question: "Describe a time when you took on something outside your area of responsibility because it was the right thing to do.",
     context: "Think about cross-functional challenges or gaps you identified and addressed.",
@@ -51,7 +78,33 @@ const mockQuestions = [
     }
   },
   {
-    id: "q3",
+    id: "q5",
+    principle: "Ownership",
+    question: "Tell me about a time when you had to take ownership of a mistake or failure.",
+    context: "Focus on accountability and how you turned a negative situation into a learning opportunity.",
+    starFramework: {
+      situation: "What went wrong?",
+      task: "What was your responsibility?",
+      action: "How did you take ownership and fix it?",
+      result: "What did you learn?"
+    }
+  },
+  {
+    id: "q6",
+    principle: "Ownership",
+    question: "Describe a time when you saw a problem that wasn't being addressed and took action.",
+    context: "Think about proactive problem-solving and driving results without being asked.",
+    starFramework: {
+      situation: "What problem did you identify?",
+      task: "Why wasn't it being addressed?",
+      action: "What initiative did you take?",
+      result: "What changed as a result?"
+    }
+  },
+  
+  // Invent and Simplify
+  {
+    id: "q7",
     principle: "Invent and Simplify", 
     question: "Tell me about a time when you invented a solution or simplified a complex process.",
     context: "Focus on innovation that created measurable business value.",
@@ -63,7 +116,33 @@ const mockQuestions = [
     }
   },
   {
-    id: "q4",
+    id: "q8",
+    principle: "Invent and Simplify",
+    question: "Describe a time when you challenged the status quo and proposed a simpler approach.",
+    context: "Focus on eliminating unnecessary complexity and improving efficiency.",
+    starFramework: {
+      situation: "What was the existing process?",
+      task: "What complications did you identify?",
+      action: "How did you simplify it?",
+      result: "What time/resources were saved?"
+    }
+  },
+  {
+    id: "q9",
+    principle: "Invent and Simplify",
+    question: "Tell me about an innovative idea you implemented that had significant impact.",
+    context: "Think about creative solutions that drove meaningful business outcomes.",
+    starFramework: {
+      situation: "What opportunity did you see?",
+      task: "What innovation did you propose?",
+      action: "How did you implement it?",
+      result: "What was the business impact?"
+    }
+  },
+  
+  // Bias for Action
+  {
+    id: "q10",
     principle: "Bias for Action",
     question: "Describe a situation where you had to make an important decision without having all the information you wanted.",
     context: "Highlight calculated risk-taking and decision-making under uncertainty.",
@@ -75,7 +154,33 @@ const mockQuestions = [
     }
   },
   {
-    id: "q5",
+    id: "q11",
+    principle: "Bias for Action",
+    question: "Tell me about a time when you had to act quickly to meet a critical deadline.",
+    context: "Focus on speed, decisiveness, and prioritization under pressure.",
+    starFramework: {
+      situation: "What was the time-sensitive challenge?",
+      task: "What needed to be done?",
+      action: "How did you move fast?",
+      result: "Did you meet the deadline? What was delivered?"
+    }
+  },
+  {
+    id: "q12",
+    principle: "Bias for Action",
+    question: "Describe a time when you took a calculated risk that paid off.",
+    context: "Think about balancing speed with smart decision-making.",
+    starFramework: {
+      situation: "What opportunity required quick action?",
+      task: "What were the risks?",
+      action: "How did you evaluate and proceed?",
+      result: "What was the positive outcome?"
+    }
+  },
+  
+  // Hire and Develop the Best
+  {
+    id: "q13",
     principle: "Hire and Develop the Best",
     question: "Tell me about a time when you helped develop someone on your team who was struggling.",
     context: "Focus on talent development and raising performance standards.",
@@ -84,6 +189,30 @@ const mockQuestions = [
       task: "What was your role as developer?",
       action: "What development approach did you take?",
       result: "How did they improve?"
+    }
+  },
+  {
+    id: "q14",
+    principle: "Hire and Develop the Best",
+    question: "Describe your approach to hiring and what you look for in candidates.",
+    context: "Focus on raising the bar and building strong teams.",
+    starFramework: {
+      situation: "What role were you hiring for?",
+      task: "What standards did you set?",
+      action: "How did you evaluate candidates?",
+      result: "How did the hire perform?"
+    }
+  },
+  {
+    id: "q15",
+    principle: "Hire and Develop the Best",
+    question: "Tell me about a time when you mentored someone and helped them advance their career.",
+    context: "Think about long-term talent development and coaching.",
+    starFramework: {
+      situation: "Who did you mentor?",
+      task: "What were their career goals?",
+      action: "How did you support their development?",
+      result: "What career progress did they make?"
     }
   }
 ];
