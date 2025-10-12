@@ -16,7 +16,7 @@ interface LeadershipPrinciple {
 interface LeadershipPrinciplesProps {
   analysisResult?: any;
   onPrinciplesSelected: (principles: LeadershipPrinciple[]) => void;
-  onNext: () => void;
+  onNext: (focusedPrinciple?: LeadershipPrinciple) => void;
 }
 
 // Mock data - in real app this would come from AI analysis
@@ -135,7 +135,7 @@ const LeadershipPrinciples = ({ analysisResult, onPrinciplesSelected, onNext }: 
                     <CardDescription>{principle.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-3 mb-4">
                       <h4 className="font-medium text-sm flex items-center gap-2">
                         <Target className="h-4 w-4" />
                         Key Behaviors to Demonstrate
@@ -149,6 +149,15 @@ const LeadershipPrinciples = ({ analysisResult, onPrinciplesSelected, onNext }: 
                         ))}
                       </div>
                     </div>
+                    <Button 
+                      onClick={() => onNext(principle)}
+                      variant="outline"
+                      className="w-full"
+                      size="sm"
+                    >
+                      Focus on this principle
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -156,15 +165,15 @@ const LeadershipPrinciples = ({ analysisResult, onPrinciplesSelected, onNext }: 
 
             <div className="text-center">
               <Button 
-                onClick={onNext}
+                onClick={() => onNext()}
                 size="lg"
                 className="bg-gradient-primary hover:shadow-elegant transition-all duration-300"
               >
-                Start Interview Questions
+                Start with All Principles
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <p className="text-sm text-muted-foreground mt-3">
-                We'll ask 5 targeted questions based on these principles
+                Or click on a specific principle above to focus your practice
               </p>
             </div>
           </>

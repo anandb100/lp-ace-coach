@@ -162,6 +162,7 @@ const Index = () => {
   const [aiQuestions, setAiQuestions] = useState<any[]>([]);
   const [questionResults, setQuestionResults] = useState<Array<{questionNumber: number; principle: string; question: string; score: number; keyImprovements: string[]}>>([]);
   const [currentAnalysisData, setCurrentAnalysisData] = useState<any>(null);
+  const [focusedPrinciple, setFocusedPrinciple] = useState<LeadershipPrinciple | null>(null);
 
   const handleFilesUploaded = (files: UploadedFile[]) => {
     setUploadedFiles(files);
@@ -169,12 +170,28 @@ const Index = () => {
 
   const handleDocumentAnalysis = (result: any) => {
     setAnalysisResult(result);
-    setAiQuestions(result.questions || mockQuestions);
+    setAiQuestions(result.questions || []);
     navigateToStep("principles");
   };
 
   const handlePrinciplesSelected = (principles: LeadershipPrinciple[]) => {
     setSelectedPrinciples(principles);
+  };
+
+  const handleStartInterview = (focusPrinciple?: LeadershipPrinciple) => {
+    if (focusPrinciple) {
+      // Filter questions for the specific principle
+      setFocusedPrinciple(focusPrinciple);
+      const principleQuestions = mockQuestions.filter(q => q.principle === focusPrinciple.title).slice(0, 3);
+      setAiQuestions(principleQuestions.length > 0 ? principleQuestions : mockQuestions.slice(0, 3));
+    } else {
+      // Use all questions (or AI-generated ones if available)
+      setFocusedPrinciple(null);
+      if (aiQuestions.length === 0) {
+        setAiQuestions(mockQuestions);
+      }
+    }
+    navigateToStep("questions");
   };
 
   const handleAnswerSubmitted = (answer: {audioBlob: Blob; transcript: string; analysisData?: any}) => {
@@ -269,7 +286,7 @@ const Index = () => {
         <LeadershipPrinciples
           analysisResult={analysisResult}
           onPrinciplesSelected={handlePrinciplesSelected}
-          onNext={() => navigateToStep("questions")}
+          onNext={handleStartInterview}
         />
       )}
       
@@ -318,6 +335,8 @@ const Index = () => {
             setUploadedFiles([]);
             setSelectedPrinciples([]);
             setQuestionResults([]);
+            setFocusedPrinciple(null);
+            setAiQuestions([]);
           }}
         />
       )}
