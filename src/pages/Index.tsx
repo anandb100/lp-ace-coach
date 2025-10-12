@@ -214,6 +214,386 @@ const mockQuestions = [
       action: "How did you support their development?",
       result: "What career progress did they make?"
     }
+  },
+  
+  // Dive Deep
+  {
+    id: "q16",
+    principle: "Dive Deep",
+    question: "Tell me about a time when you had to dive deep into data or details to solve a problem.",
+    context: "Focus on analytical thinking and attention to detail.",
+    starFramework: {
+      situation: "What problem required deep analysis?",
+      task: "What details did you need to understand?",
+      action: "How did you dig into the data?",
+      result: "What insights did you discover?"
+    }
+  },
+  {
+    id: "q17",
+    principle: "Dive Deep",
+    question: "Describe a situation where surface-level information wasn't enough and you had to investigate further.",
+    context: "Think about going beyond the obvious to find root causes.",
+    starFramework: {
+      situation: "What initially appeared to be the problem?",
+      task: "Why did you need to dig deeper?",
+      action: "What investigation methods did you use?",
+      result: "What was the actual root cause?"
+    }
+  },
+  {
+    id: "q18",
+    principle: "Dive Deep",
+    question: "Tell me about a time when your attention to detail prevented a significant issue.",
+    context: "Focus on thoroughness and catching problems others might miss.",
+    starFramework: {
+      situation: "What were you working on?",
+      task: "What detail did you notice?",
+      action: "How did you address it?",
+      result: "What problem did you prevent?"
+    }
+  },
+  
+  // Learn and Be Curious
+  {
+    id: "q19",
+    principle: "Learn and Be Curious",
+    question: "Tell me about a time when you learned a new skill or technology to solve a problem.",
+    context: "Focus on continuous learning and applying new knowledge.",
+    starFramework: {
+      situation: "What challenge required new knowledge?",
+      task: "What did you need to learn?",
+      action: "How did you acquire this knowledge?",
+      result: "How did you apply it successfully?"
+    }
+  },
+  {
+    id: "q20",
+    principle: "Learn and Be Curious",
+    question: "Describe a time when you explored an idea or solution outside your area of expertise.",
+    context: "Think about intellectual curiosity and broadening your knowledge.",
+    starFramework: {
+      situation: "What sparked your curiosity?",
+      task: "What did you want to understand?",
+      action: "How did you explore this new area?",
+      result: "What value did this exploration bring?"
+    }
+  },
+  {
+    id: "q21",
+    principle: "Learn and Be Curious",
+    question: "Tell me about a time when you sought out feedback or learning opportunities to improve yourself.",
+    context: "Focus on self-improvement and growth mindset.",
+    starFramework: {
+      situation: "What did you want to improve?",
+      task: "What feedback did you seek?",
+      action: "How did you act on that feedback?",
+      result: "How did you grow as a result?"
+    }
+  },
+  
+  // Insist on the Highest Standards
+  {
+    id: "q22",
+    principle: "Insist on the Highest Standards",
+    question: "Tell me about a time when you raised the bar for quality on your team or project.",
+    context: "Focus on setting and maintaining high standards.",
+    starFramework: {
+      situation: "What was the quality issue?",
+      task: "What standard did you want to achieve?",
+      action: "How did you raise the bar?",
+      result: "What quality improvements resulted?"
+    }
+  },
+  {
+    id: "q23",
+    principle: "Insist on the Highest Standards",
+    question: "Describe a situation where you refused to compromise on quality despite pressure.",
+    context: "Think about maintaining standards under challenging circumstances.",
+    starFramework: {
+      situation: "What pressure were you facing?",
+      task: "What standard were you defending?",
+      action: "How did you maintain quality?",
+      result: "Why was this the right decision?"
+    }
+  },
+  {
+    id: "q24",
+    principle: "Insist on the Highest Standards",
+    question: "Tell me about a time when you identified and fixed a quality problem that others had overlooked.",
+    context: "Focus on attention to excellence and continuous improvement.",
+    starFramework: {
+      situation: "What quality issue did you notice?",
+      task: "Why had others missed it?",
+      action: "How did you address it?",
+      result: "What impact did this have?"
+    }
+  },
+  
+  // Think Big
+  {
+    id: "q25",
+    principle: "Think Big",
+    question: "Tell me about a time when you proposed a bold or ambitious vision for a project.",
+    context: "Focus on thinking beyond incremental improvements.",
+    starFramework: {
+      situation: "What opportunity did you see?",
+      task: "What bold vision did you propose?",
+      action: "How did you get buy-in and execute?",
+      result: "What transformational impact did it have?"
+    }
+  },
+  {
+    id: "q26",
+    principle: "Think Big",
+    question: "Describe a time when you challenged conventional thinking with a bigger idea.",
+    context: "Think about inspiring others with a compelling long-term vision.",
+    starFramework: {
+      situation: "What was the conventional approach?",
+      task: "What bigger idea did you have?",
+      action: "How did you communicate and pursue it?",
+      result: "How did it change perspectives?"
+    }
+  },
+  {
+    id: "q27",
+    principle: "Think Big",
+    question: "Tell me about a time when you took a long-term view that paid off.",
+    context: "Focus on strategic thinking and future-oriented decisions.",
+    starFramework: {
+      situation: "What decision needed to be made?",
+      task: "What long-term perspective did you take?",
+      action: "How did you execute on this vision?",
+      result: "What long-term benefits resulted?"
+    }
+  },
+  
+  // Frugality
+  {
+    id: "q28",
+    principle: "Frugality",
+    question: "Tell me about a time when you accomplished more with less resources.",
+    context: "Focus on resourcefulness and efficiency.",
+    starFramework: {
+      situation: "What resource constraints did you face?",
+      task: "What needed to be accomplished?",
+      action: "How did you maximize limited resources?",
+      result: "What did you achieve?"
+    }
+  },
+  {
+    id: "q29",
+    principle: "Frugality",
+    question: "Describe a time when you found a cost-effective alternative to an expensive solution.",
+    context: "Think about being scrappy and finding creative ways to save.",
+    starFramework: {
+      situation: "What was the expensive approach?",
+      task: "What constraints did you have?",
+      action: "What alternative did you find?",
+      result: "How much did you save?"
+    }
+  },
+  {
+    id: "q30",
+    principle: "Frugality",
+    question: "Tell me about a time when resource constraints led you to innovate.",
+    context: "Focus on how limitations can drive creativity.",
+    starFramework: {
+      situation: "What resources were limited?",
+      task: "What goal were you trying to achieve?",
+      action: "What innovative approach did you take?",
+      result: "What unexpected benefits came from this?"
+    }
+  },
+  
+  // Earn Trust
+  {
+    id: "q31",
+    principle: "Earn Trust",
+    question: "Tell me about a time when you had to build trust with a skeptical stakeholder.",
+    context: "Focus on transparency, credibility, and following through.",
+    starFramework: {
+      situation: "Who was skeptical and why?",
+      task: "What did you need to achieve?",
+      action: "How did you earn their trust?",
+      result: "How did the relationship change?"
+    }
+  },
+  {
+    id: "q32",
+    principle: "Earn Trust",
+    question: "Describe a situation where you had to deliver bad news or admit a mistake.",
+    context: "Think about being honest and transparent even when it's difficult.",
+    starFramework: {
+      situation: "What was the bad news or mistake?",
+      task: "Who needed to know?",
+      action: "How did you communicate it?",
+      result: "How did people respond to your honesty?"
+    }
+  },
+  {
+    id: "q33",
+    principle: "Earn Trust",
+    question: "Tell me about a time when you had to be vulnerable or ask for help.",
+    context: "Focus on humility and building authentic relationships.",
+    starFramework: {
+      situation: "What challenge were you facing?",
+      task: "What help did you need?",
+      action: "How did you ask for it?",
+      result: "How did this strengthen relationships?"
+    }
+  },
+  
+  // Deliver Results
+  {
+    id: "q34",
+    principle: "Deliver Results",
+    question: "Tell me about a time when you had to deliver results despite significant obstacles.",
+    context: "Focus on perseverance and overcoming challenges.",
+    starFramework: {
+      situation: "What was the critical deliverable?",
+      task: "What obstacles did you face?",
+      action: "How did you overcome them?",
+      result: "What did you ultimately deliver?"
+    }
+  },
+  {
+    id: "q35",
+    principle: "Deliver Results",
+    question: "Describe a time when you had to prioritize ruthlessly to meet a commitment.",
+    context: "Think about focus and making tough trade-off decisions.",
+    starFramework: {
+      situation: "What commitment had you made?",
+      task: "What competing priorities existed?",
+      action: "How did you prioritize?",
+      result: "Did you meet your commitment?"
+    }
+  },
+  {
+    id: "q36",
+    principle: "Deliver Results",
+    question: "Tell me about your most significant professional achievement.",
+    context: "Focus on measurable impact and driving meaningful outcomes.",
+    starFramework: {
+      situation: "What was the challenging goal?",
+      task: "What was your role?",
+      action: "How did you drive results?",
+      result: "What measurable impact did you create?"
+    }
+  },
+  
+  // Strive to be Earth's Best Employer
+  {
+    id: "q37",
+    principle: "Strive to be Earth's Best Employer",
+    question: "Tell me about a time when you took action to improve your team's work environment or culture.",
+    context: "Focus on creating a safe, productive, and inclusive workplace.",
+    starFramework: {
+      situation: "What issue did you notice?",
+      task: "What needed to improve?",
+      action: "What changes did you implement?",
+      result: "How did team morale or productivity improve?"
+    }
+  },
+  {
+    id: "q38",
+    principle: "Strive to be Earth's Best Employer",
+    question: "Describe a time when you advocated for the well-being or growth of your team members.",
+    context: "Think about investing in people and their development.",
+    starFramework: {
+      situation: "What was affecting your team?",
+      task: "What did you advocate for?",
+      action: "How did you make the case?",
+      result: "What improved for the team?"
+    }
+  },
+  {
+    id: "q39",
+    principle: "Strive to be Earth's Best Employer",
+    question: "Tell me about a time when you created an inclusive environment for diverse perspectives.",
+    context: "Focus on building belonging and psychological safety.",
+    starFramework: {
+      situation: "What diversity challenge existed?",
+      task: "What change was needed?",
+      action: "How did you promote inclusion?",
+      result: "How did team dynamics improve?"
+    }
+  },
+  
+  // Success and Scale Bring Broad Responsibility
+  {
+    id: "q40",
+    principle: "Success and Scale Bring Broad Responsibility",
+    question: "Tell me about a time when you considered the broader impact of your decisions beyond immediate business goals.",
+    context: "Focus on social responsibility and long-term thinking.",
+    starFramework: {
+      situation: "What decision were you making?",
+      task: "What broader impacts did you consider?",
+      action: "How did you balance different stakeholders?",
+      result: "What was the holistic outcome?"
+    }
+  },
+  {
+    id: "q41",
+    principle: "Success and Scale Bring Broad Responsibility",
+    question: "Describe a time when you took action to benefit your community or society, not just your company.",
+    context: "Think about corporate responsibility and giving back.",
+    starFramework: {
+      situation: "What opportunity did you see?",
+      task: "What responsibility did you feel?",
+      action: "What initiative did you take?",
+      result: "What positive impact did you create?"
+    }
+  },
+  {
+    id: "q42",
+    principle: "Success and Scale Bring Broad Responsibility",
+    question: "Tell me about a time when you advocated for sustainable or ethical practices.",
+    context: "Focus on doing the right thing for the long term.",
+    starFramework: {
+      situation: "What practice concerned you?",
+      task: "What change did you propose?",
+      action: "How did you advocate for it?",
+      result: "What lasting impact did this have?"
+    }
+  },
+  
+  // Have Backbone; Disagree and Commit
+  {
+    id: "q43",
+    principle: "Have Backbone; Disagree and Commit",
+    question: "Tell me about a time when you disagreed with a decision but committed to it fully.",
+    context: "Focus on respectful disagreement and full commitment once decided.",
+    starFramework: {
+      situation: "What was the decision?",
+      task: "Why did you disagree?",
+      action: "How did you commit after the decision?",
+      result: "What was the outcome?"
+    }
+  },
+  {
+    id: "q44",
+    principle: "Have Backbone; Disagree and Commit",
+    question: "Describe a time when you challenged a decision made by senior leadership.",
+    context: "Think about respectfully speaking up even when it's uncomfortable.",
+    starFramework: {
+      situation: "What decision did you challenge?",
+      task: "What was your concern?",
+      action: "How did you voice your disagreement?",
+      result: "What happened as a result?"
+    }
+  },
+  {
+    id: "q45",
+    principle: "Have Backbone; Disagree and Commit",
+    question: "Tell me about a time when you had to deliver an unpopular message or decision.",
+    context: "Focus on having conviction and standing by difficult decisions.",
+    starFramework: {
+      situation: "What was the unpopular decision?",
+      task: "Why was it necessary?",
+      action: "How did you communicate and stand firm?",
+      result: "How did people eventually respond?"
+    }
   }
 ];
 
