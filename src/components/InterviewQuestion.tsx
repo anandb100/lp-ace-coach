@@ -249,6 +249,7 @@ const InterviewQuestion = ({
       }
 
       console.log('Analysis data received:', analysisData);
+      console.log('Suggested Answer:', analysisData?.suggestedAnswer);
 
       // Save the response with feedback
       const { error: responseError } = await supabase

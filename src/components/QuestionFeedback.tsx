@@ -123,14 +123,19 @@ const QuestionFeedback = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {Object.entries(suggestedAnswer).map(([key, value]) => (
-              <div key={key} className="space-y-2">
-                <h4 className="font-medium capitalize text-purple-800">{key}:</h4>
-                <p className="text-sm text-purple-700 bg-white/60 p-3 rounded-md border border-purple-200">
-                  {value}
-                </p>
-              </div>
+            {suggestedAnswer && Object.entries(suggestedAnswer).map(([key, value]) => (
+              value && (
+                <div key={key} className="space-y-2">
+                  <h4 className="font-medium capitalize text-purple-800">{key}:</h4>
+                  <p className="text-sm text-purple-700 bg-white/60 p-3 rounded-md border border-purple-200">
+                    {value}
+                  </p>
+                </div>
+              )
             ))}
+            {(!suggestedAnswer || Object.values(suggestedAnswer).every(v => !v)) && (
+              <p className="text-sm text-purple-700 italic">Loading suggested answer...</p>
+            )}
           </CardContent>
         </Card>
 
