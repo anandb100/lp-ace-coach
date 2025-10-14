@@ -104,7 +104,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -115,7 +115,8 @@ serve(async (req) => {
             content: analysisPrompt
           }
         ],
-        max_completion_tokens: 2000,
+        max_tokens: 2000,
+        temperature: 0.7,
         response_format: { type: "json_object" }
       }),
     });
@@ -129,15 +130,23 @@ serve(async (req) => {
 
     console.log('Parsing OpenAI response...');
     const aiResponse = await response.json();
-    console.log('OpenAI response received, parsing content...');
+    console.log('Full AI response:', JSON.stringify(aiResponse, null, 2));
+    
+    const messageContent = aiResponse.choices?.[0]?.message?.content;
+    console.log('Message content:', messageContent);
+    
+    if (!messageContent || messageContent.trim() === '') {
+      console.error('Empty response from OpenAI');
+      throw new Error('OpenAI returned empty response. Please try again.');
+    }
     
     let analysisResult;
     try {
-      analysisResult = JSON.parse(aiResponse.choices[0].message.content);
+      analysisResult = JSON.parse(messageContent);
       console.log('Successfully parsed analysis result');
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', aiResponse.choices[0].message.content);
+      console.error('Raw content:', messageContent);
       throw new Error('Failed to parse OpenAI response as JSON');
     }
 
