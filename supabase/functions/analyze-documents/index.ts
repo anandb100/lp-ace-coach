@@ -41,7 +41,7 @@ serve(async (req) => {
 
     // Analyze job description to identify relevant leadership principles and generate questions
     const analysisPrompt = `
-    You are an expert Amazon interview coach. Analyze the following job description and resume to:
+    You are an expert Amazon interview coach. Analyze the following job description to:
     
     1. Identify the 5 most relevant Amazon Leadership Principles for this role
     2. Generate 3 specific behavioral interview questions based on these principles
@@ -49,9 +49,6 @@ serve(async (req) => {
     
     Job Description:
     ${jobDescriptionContent}
-    
-    Resume:
-    ${resumeContent}
     
     Amazon's 16 Leadership Principles are:
     1. Customer Obsession
