@@ -8,6 +8,14 @@ import { Mic, Square, ArrowRight, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+// TypeScript declarations for Web Speech API
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 interface Question {
   id: string;
   principle: string;
@@ -49,6 +57,7 @@ const InterviewQuestion = ({
   const [isGettingFeedback, setIsGettingFeedback] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -63,6 +72,49 @@ const InterviewQuestion = ({
           autoGainControl: true
         }
       });
+      
+      // Initialize Web Speech API for real-time transcription
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event: any) => {
+          const transcriptText = Array.from(event.results)
+            .map((result: any) => result[0].transcript)
+            .join(' ');
+          
+          setTranscript(transcriptText);
+        };
+        
+        recognition.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          if (event.error !== 'no-speech') {
+            toast({
+              title: "Transcription Notice",
+              description: "Real-time transcription paused. You can continue recording or type manually.",
+              variant: "default",
+            });
+          }
+        };
+        
+        recognitionRef.current = recognition;
+        try {
+          recognition.start();
+          setIsTranscribing(true);
+        } catch (error) {
+          console.error('Failed to start speech recognition:', error);
+        }
+      } else {
+        toast({
+          title: "Speech Recognition Unavailable",
+          description: "Please type your response manually or use Chrome/Safari for real-time transcription.",
+          variant: "default",
+        });
+      }
       
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -79,8 +131,12 @@ const InterviewQuestion = ({
         setHasRecorded(true);
         stream.getTracks().forEach(track => track.stop());
         
-        // Automatically transcribe the audio
-        await transcribeAudio(blob);
+        // Stop speech recognition
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
+        
+        setIsTranscribing(false);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -105,54 +161,18 @@ const InterviewQuestion = ({
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      
+      // Stop speech recognition
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     }
   };
 
-  const transcribeAudio = async (audioBlob: Blob) => {
-    setIsTranscribing(true);
-    try {
-      // Convert blob to base64
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = '';
-      const chunkSize = 0x8000;
-      
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-        binary += String.fromCharCode.apply(null, Array.from(chunk));
-      }
-      
-      const base64Audio = btoa(binary);
-
-      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-        body: { audio: base64Audio }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to transcribe audio');
-      }
-
-      setTranscript(data.text || 'No transcription available');
-      
-      toast({
-        title: "Transcription Complete",
-        description: "Your response has been converted to text.",
-      });
-
-    } catch (error) {
-      console.error('Transcription error:', error);
-      toast({
-        title: "Transcription Error",
-        description: "Failed to convert speech to text. You can type your response directly.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
 
   const getAIFeedback = async () => {
     if (!transcript.trim()) {
@@ -403,7 +423,7 @@ const InterviewQuestion = ({
               {isTranscribing && (
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                  Converting speech to text...
+                  Transcribing in real-time...
                 </p>
               )}
             </div>
