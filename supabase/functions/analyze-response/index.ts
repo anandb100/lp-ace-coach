@@ -50,7 +50,7 @@ serve(async (req) => {
 
     4 Sections should be there in the Analysis. Section 1 – Overall Score out of 100. Give an overall score based on the quality of the answer. Give a 1-liner feedback.
     Section 2 - STAR Framework Analysis. It should be in the format as shown below.
-    Section 3 – Suggested STAR Answer. It should be in the format as shown below.
+    Section 3 – Suggested STAR Answer. CRITICAL: Each component (Situation, Task, Action, Result) must be a detailed, comprehensive paragraph (100-150 words each) with specific metrics, timelines, and concrete details. Do NOT provide short, generic answers.
     Section 4 - Why this answer aligns to the JD. It should be in the format as shown below.
 
     Question Asked: ${questionText}
@@ -100,7 +100,13 @@ serve(async (req) => {
       ]
     }
 
-    Provide actual analysis based on the user's specific response and context. Don't copy the example format exactly, but use it as a structure reference.
+    CRITICAL INSTRUCTIONS FOR SUGGESTED ANSWER:
+    - Each STAR component (Situation, Task, Action, Result) MUST be a full, detailed paragraph (100-150 words minimum)
+    - Include specific numbers, metrics, timelines, and concrete details from the user's resume
+    - The suggested answer should be comprehensive enough to serve as a model answer for Amazon interviews
+    - Do NOT provide short, bullet-point style answers - write flowing, detailed paragraphs
+    
+    Provide actual analysis based on the user's specific response and context. Use the example above as a reference for the level of detail expected.
     `;
 
     console.log('Making OpenAI API request...');
