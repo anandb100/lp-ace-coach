@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,14 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mic, Square, ArrowRight, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-// TypeScript declarations for Web Speech API
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
-}
+import { pipeline } from "@huggingface/transformers";
 
 interface Question {
   id: string;
@@ -57,64 +50,87 @@ const InterviewQuestion = ({
   const [isGettingFeedback, setIsGettingFeedback] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const transcriberRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Initialize Whisper model on component mount
+  useEffect(() => {
+    const initializeTranscriber = async () => {
+      if (!transcriberRef.current) {
+        try {
+          console.log('Loading Whisper model...');
+          toast({
+            title: "Loading Speech Recognition",
+            description: "Loading AI model for accurate transcription...",
+          });
+          
+          transcriberRef.current = await pipeline(
+            "automatic-speech-recognition",
+            "onnx-community/whisper-tiny.en",
+            { device: "webgpu" }
+          );
+          
+          console.log('Whisper model loaded successfully');
+          toast({
+            title: "Ready to Record",
+            description: "AI speech recognition is ready for accurate transcription.",
+          });
+        } catch (error) {
+          console.error('Failed to load Whisper model:', error);
+          toast({
+            title: "Model Loading Failed",
+            description: "Speech recognition may have reduced accuracy.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    initializeTranscriber();
+  }, []);
+
+  const transcribeWithWhisper = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      if (!transcriberRef.current) {
+        throw new Error('Transcriber not initialized');
+      }
+      
+      console.log('Transcribing audio with Whisper...');
+      
+      // Transcribe the audio
+      const output = await transcriberRef.current(audioBlob);
+      
+      setTranscript(output.text);
+      
+      toast({
+        title: "Transcription Complete",
+        description: "Your response has been accurately converted to text.",
+      });
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast({
+        title: "Transcription Error",
+        description: "Failed to transcribe. You can type your response directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          sampleRate: 44100,
+          sampleRate: 16000,
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
         }
       });
-      
-      // Initialize Web Speech API for real-time transcription
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        
-        recognition.onresult = (event: any) => {
-          const transcriptText = Array.from(event.results)
-            .map((result: any) => result[0].transcript)
-            .join(' ');
-          
-          setTranscript(transcriptText);
-        };
-        
-        recognition.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
-          if (event.error !== 'no-speech') {
-            toast({
-              title: "Transcription Notice",
-              description: "Real-time transcription paused. You can continue recording or type manually.",
-              variant: "default",
-            });
-          }
-        };
-        
-        recognitionRef.current = recognition;
-        try {
-          recognition.start();
-          setIsTranscribing(true);
-        } catch (error) {
-          console.error('Failed to start speech recognition:', error);
-        }
-      } else {
-        toast({
-          title: "Speech Recognition Unavailable",
-          description: "Please type your response manually or use Chrome/Safari for real-time transcription.",
-          variant: "default",
-        });
-      }
       
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -131,12 +147,8 @@ const InterviewQuestion = ({
         setHasRecorded(true);
         stream.getTracks().forEach(track => track.stop());
         
-        // Stop speech recognition
-        if (recognitionRef.current) {
-          recognitionRef.current.stop();
-        }
-        
-        setIsTranscribing(false);
+        // Transcribe using Whisper after recording stops
+        await transcribeWithWhisper(blob);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -161,11 +173,6 @@ const InterviewQuestion = ({
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      
-      // Stop speech recognition
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
       
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -423,7 +430,7 @@ const InterviewQuestion = ({
               {isTranscribing && (
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                  Transcribing in real-time...
+                  Transcribing with AI...
                 </p>
               )}
             </div>
