@@ -65,13 +65,23 @@ const InterviewQuestion = ({
             description: "Loading AI model for accurate transcription...",
           });
           
-          transcriberRef.current = await pipeline(
-            "automatic-speech-recognition",
-            "onnx-community/whisper-tiny.en",
-            { device: "webgpu" }
-          );
+          // Try WebGPU first, fall back to CPU
+          try {
+            transcriberRef.current = await pipeline(
+              "automatic-speech-recognition",
+              "onnx-community/whisper-tiny.en",
+              { device: "webgpu" }
+            );
+            console.log('Whisper model loaded with WebGPU');
+          } catch (gpuError) {
+            console.warn('WebGPU not available, falling back to CPU:', gpuError);
+            transcriberRef.current = await pipeline(
+              "automatic-speech-recognition",
+              "onnx-community/whisper-tiny.en"
+            );
+            console.log('Whisper model loaded with CPU');
+          }
           
-          console.log('Whisper model loaded successfully');
           toast({
             title: "Ready to Record",
             description: "AI speech recognition is ready for accurate transcription.",
@@ -97,17 +107,31 @@ const InterviewQuestion = ({
         throw new Error('Transcriber not initialized');
       }
       
+      console.log('Creating audio URL for transcription...');
+      console.log('Audio blob size:', audioBlob.size, 'bytes');
+      console.log('Audio blob type:', audioBlob.type);
+      
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
       console.log('Transcribing audio with Whisper...');
       
-      // Transcribe the audio
-      const output = await transcriberRef.current(audioBlob);
+      // Pass URL instead of blob
+      const output = await transcriberRef.current(audioUrl);
       
-      setTranscript(output.text);
+      console.log('Transcription output:', output);
       
-      toast({
-        title: "Transcription Complete",
-        description: "Your response has been accurately converted to text.",
-      });
+      // Clean up URL
+      URL.revokeObjectURL(audioUrl);
+      
+      if (output && output.text) {
+        setTranscript(output.text);
+        toast({
+          title: "Transcription Complete",
+          description: "Your response has been accurately converted to text.",
+        });
+      } else {
+        throw new Error('No transcription text received');
+      }
     } catch (error) {
       console.error('Transcription error:', error);
       toast({
