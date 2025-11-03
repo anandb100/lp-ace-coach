@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mic, Square, ArrowRight, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { pipeline } from "@huggingface/transformers";
 
 interface Question {
   id: string;
@@ -46,143 +45,113 @@ const InterviewQuestion = ({
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcript, setTranscript] = useState("");
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isGettingFeedback, setIsGettingFeedback] = useState(false);
   
+  const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const transcriberRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const finalTranscriptRef = useRef("");
   const { toast } = useToast();
 
-  // Initialize Whisper model on component mount
+  // Initialize Web Speech API
   useEffect(() => {
-    const initializeTranscriber = async () => {
-      if (!transcriberRef.current) {
-        try {
-          console.log('Loading Whisper model...');
-          toast({
-            title: "Loading Speech Recognition",
-            description: "Loading AI model for accurate transcription...",
-          });
-          
-          // Try WebGPU first, fall back to CPU
-          try {
-            transcriberRef.current = await pipeline(
-              "automatic-speech-recognition",
-              "onnx-community/whisper-tiny.en",
-              { device: "webgpu" }
-            );
-            console.log('Whisper model loaded with WebGPU');
-          } catch (gpuError) {
-            console.warn('WebGPU not available, falling back to CPU:', gpuError);
-            transcriberRef.current = await pipeline(
-              "automatic-speech-recognition",
-              "onnx-community/whisper-tiny.en"
-            );
-            console.log('Whisper model loaded with CPU');
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        console.log('Speech recognition started');
+      };
+
+      recognition.onend = () => {
+        console.log('Speech recognition ended');
+      };
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcriptPiece = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscriptRef.current += transcriptPiece + ' ';
+          } else {
+            interimTranscript += transcriptPiece;
           }
-          
-          toast({
-            title: "Ready to Record",
-            description: "AI speech recognition is ready for accurate transcription.",
-          });
-        } catch (error) {
-          console.error('Failed to load Whisper model:', error);
-          toast({
-            title: "Model Loading Failed",
-            description: "Speech recognition may have reduced accuracy.",
-            variant: "destructive",
-          });
         }
-      }
-    };
+        
+        setTranscript(finalTranscriptRef.current + interimTranscript);
+      };
 
-    initializeTranscriber();
-  }, []);
-
-  const transcribeWithWhisper = async (audioBlob: Blob) => {
-    setIsTranscribing(true);
-    try {
-      if (!transcriberRef.current) {
-        throw new Error('Transcriber not initialized');
-      }
-      
-      console.log('Creating audio URL for transcription...');
-      console.log('Audio blob size:', audioBlob.size, 'bytes');
-      console.log('Audio blob type:', audioBlob.type);
-      
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      console.log('Transcribing audio with Whisper...');
-      
-      // Pass URL instead of blob
-      const output = await transcriberRef.current(audioUrl);
-      
-      console.log('Transcription output:', output);
-      
-      // Clean up URL
-      URL.revokeObjectURL(audioUrl);
-      
-      if (output && output.text) {
-        setTranscript(output.text);
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
         toast({
-          title: "Transcription Complete",
-          description: "Your response has been accurately converted to text.",
+          title: "Recognition Error",
+          description: `Error: ${event.error}. You can type your response directly.`,
+          variant: "destructive",
         });
-      } else {
-        throw new Error('No transcription text received');
-      }
-    } catch (error) {
-      console.error('Transcription error:', error);
+      };
+
+      recognitionRef.current = recognition;
+    } else {
       toast({
-        title: "Transcription Error",
-        description: "Failed to transcribe. You can type your response directly.",
+        title: "Not Supported",
+        description: "Speech recognition is not supported in this browser. Please type your response.",
         variant: "destructive",
       });
-    } finally {
-      setIsTranscribing(false);
     }
-  };
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [toast]);
+
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      // Start audio recording for storage
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      const mediaRecorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = (event) => {
         chunks.push(event.data);
       };
 
-      mediaRecorder.onstop = async () => {
+      mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         setAudioBlob(blob);
         setHasRecorded(true);
         stream.getTracks().forEach(track => track.stop());
-        
-        // Transcribe using Whisper after recording stops
-        await transcribeWithWhisper(blob);
       };
 
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
+
+      // Start speech recognition
+      if (recognitionRef.current) {
+        finalTranscriptRef.current = "";
+        setTranscript("");
+        recognitionRef.current.start();
+      }
+
       setIsRecording(true);
       setRecordingTime(0);
 
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
+
+      toast({
+        title: "Recording Started",
+        description: "Speak clearly into your microphone.",
+      });
 
     } catch (error) {
       toast({
@@ -198,9 +167,18 @@ const InterviewQuestion = ({
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+
+      toast({
+        title: "Recording Stopped",
+        description: "Your response has been captured.",
+      });
     }
   };
 
@@ -470,14 +448,14 @@ const InterviewQuestion = ({
               <Textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
-                placeholder="Your response will appear here after recording, or you can type directly..."
+                placeholder="Your response will appear here in real-time as you speak, or you can type directly..."
                 className="min-h-[200px] resize-none"
-                disabled={isTranscribing}
+                disabled={isRecording}
               />
-              {isTranscribing && (
+              {isRecording && (
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                  Transcribing with AI...
+                  <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
+                  Listening and transcribing in real-time...
                 </p>
               )}
             </div>
