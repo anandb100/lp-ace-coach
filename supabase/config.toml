@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.analyze-response]
 verify_jwt = false
+
+[functions.extract-relevant-resume]
+verify_jwt = false

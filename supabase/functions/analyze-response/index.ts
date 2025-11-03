@@ -48,16 +48,17 @@ serve(async (req) => {
     const analysisPrompt = `
     Assume you are an Amazon HR recruiting expert interviewer. You are interviewing the user. You asked him the question and he has given the response. Now, analyse the user response in the context of his CV and then give him a comprehensive analysis of his answer with respect to the question. Use the STAR framework.
 
-    4 Sections should be there in the Analysis. Section 1 – Overall Score out of 100. Give an overall score based on the quality of the answer. Give a 1-liner feedback.
-    Section 2 - STAR Framework Analysis. It should be in the format as shown below.
-    Section 3 – Suggested STAR Answer. CRITICAL: Each component (Situation, Task, Action, Result) must be a detailed, comprehensive paragraph (100-150 words each) with specific metrics, timelines, and concrete details. Do NOT provide short, generic answers.
-    Section 4 - Why this answer aligns to the JD. It should be in the format as shown below.
+    4 Sections should be there in the Analysis:
+    Section 1 – Overall Score out of 100. Give an overall score based on the quality of the answer. Give a 1-liner feedback.
+    Section 2 - STAR Framework Analysis. Analyze each STAR component with a score (0-100) and specific feedback.
+    Section 3 – Suggested STAR Answer. CRITICAL: Each component (Situation, Task, Action, Result) must be a detailed, comprehensive paragraph (100-150 words each) with specific metrics, timelines, and concrete details from the user's actual resume.
+    Section 4 - Why this answer aligns to the JD. Provide 3-5 specific alignment points.
 
     Question Asked: ${questionText}
     Leadership Principle: ${leadershipPrinciple}
     User's Response: ${userResponse}
     
-    User's Resume:
+    User's Relevant Resume Sections:
     ${resumeContent}
     
     Job Description:
@@ -66,47 +67,46 @@ serve(async (req) => {
     Please provide analysis in this exact JSON format:
     {
       "overallScore": {
-        "score": 78,
-        "feedback": "Strong potential with clearer metrics and mechanisms"
+        "score": <number 0-100>,
+        "feedback": "<concise 1-liner feedback>"
       },
       "starAnalysis": {
         "situation": {
-          "score": 82,
-          "feedback": "Ambiguity and high stakes options are evident, but urgency signals (runway, customer churn risk, unit economics) should be explicit to show why speed mattered now."
+          "score": <number 0-100>,
+          "feedback": "<specific feedback on situation setup>"
         },
         "task": {
-          "score": 78,
-          "feedback": "Decision objective is implied, but success criteria and a decision deadline are missing; define the bar and timebox to evidence judgment under limited data."
+          "score": <number 0-100>,
+          "feedback": "<specific feedback on task definition>"
         },
         "action": {
-          "score": 74,
-          "feedback": "States a choice but lacks concrete actions taken to de risk speed (pilot design, supplier terms, guardrails, metrics cadence, stakeholder alignment)."
+          "score": <number 0-100>,
+          "feedback": "<specific feedback on actions taken>"
         },
         "result": {
-          "score": 72,
-          "feedback": "Outcome is described as mixed without quantified results, lessons, or mechanisms institutionalized; Amazon expects measurable impact and learning loops even when results are imperfect."
+          "score": <number 0-100>,
+          "feedback": "<specific feedback on results and impact>"
         }
       },
       "suggestedAnswer": {
-        "situation": "Six months after a pivot at HealthBeacon, sales pipeline softened and 45 day cash cycles created a three month runway risk; four paths existed—continue pivot, launch private label, rejoin Entero, or accept Reliance's offer—with incomplete market and margin data.",
-        "task": "Make a reversible, time boxed decision within two weeks to preserve cash and validate a higher margin model; success bar: ≥18% gross margin, ≤10 day cash conversion, ≥60% reorder rate from a limited cohort while capping working capital exposure to ≤INR 15 lakhs.",
-        "action": "Ran a 10 day sprint to negotiate low MOQ SLAs with two manufacturers, assembled a 50 SKU pilot from fast moving OTC/surgical categories, launched a geo fenced pilot to 50 chemists with guardrails (OTIF ≥95%, defect ≤2%, stop loss at INR 10 lakhs), and instituted daily metric reviews allowing 24 hour price/SKU pivots and two decision gates (Day 7 and Day 14).",
-        "result": "By Day 14, achieved 19.6% GM, 9 day cash conversion, 64% reorder rate, and 96.8% OTIF; scaled to 80 SKUs and 1,500 chemists with INR 3 Cr Year 2 revenue; later margin compression at scale prompted exits from two categories, stricter supplier scorecards, and tighter credit terms, preserving cash and codifying mechanisms for faster, safer decisions in future programs."
+        "situation": "<detailed 100-150 word paragraph with specific context, numbers, and timeline>",
+        "task": "<detailed 100-150 word paragraph with clear objective, success criteria, and constraints>",
+        "action": "<detailed 100-150 word paragraph with specific actions, methods, and stakeholder engagement>",
+        "result": "<detailed 100-150 word paragraph with quantified outcomes, learnings, and long-term impact>"
       },
       "jobAlignment": [
-        "Balances speed and precision via timeboxes, guardrails, and reversible pilots—mirrors POE's mandate to act rapidly on emerging risks without harming good actors.",
-        "Uses data and metrics to determine improvements and communicates clear thresholds and results, matching expectations to define program requirements and report to leadership.",
-        "Demonstrates portable mechanisms: geo fenced rollouts, stop loss triggers, supplier/partner scorecards, and daily metric cadences that can localize global policies for India."
+        "<specific alignment point 1>",
+        "<specific alignment point 2>",
+        "<specific alignment point 3>"
       ]
     }
 
-    CRITICAL INSTRUCTIONS FOR SUGGESTED ANSWER:
-    - Each STAR component (Situation, Task, Action, Result) MUST be a full, detailed paragraph (100-150 words minimum)
-    - Include specific numbers, metrics, timelines, and concrete details from the user's resume
-    - The suggested answer should be comprehensive enough to serve as a model answer for Amazon interviews
+    CRITICAL INSTRUCTIONS:
+    - Each STAR component in suggestedAnswer MUST be a full, detailed paragraph (100-150 words minimum)
+    - Use specific numbers, metrics, timelines, and concrete details from the user's resume
+    - The suggested answer should serve as a model answer for Amazon interviews
     - Do NOT provide short, bullet-point style answers - write flowing, detailed paragraphs
-    
-    Provide actual analysis based on the user's specific response and context. Use the example above as a reference for the level of detail expected.
+    - Focus on the user's actual experience and achievements
     `;
 
     console.log('Making OpenAI API request...');

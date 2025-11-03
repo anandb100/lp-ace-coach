@@ -277,12 +277,35 @@ const InterviewQuestion = ({
         return;
       }
 
-      // Call the analyze-response function
+      // Step 1: Extract relevant resume sections
+      console.log('Extracting relevant resume sections...');
+      const { data: extractionData, error: extractionError } = await supabase.functions.invoke('extract-relevant-resume', {
+        body: {
+          resumeContent: resume,
+          questionText: question.question,
+          leadershipPrinciple: question.principle,
+        },
+      });
+
+      if (extractionError || !extractionData?.condensedResume) {
+        console.error('Error extracting resume sections:', extractionError);
+        toast({
+          title: "Error",
+          description: "Failed to process resume. Please try again.",
+          variant: "destructive",
+        });
+        setIsGettingFeedback(false);
+        return;
+      }
+
+      console.log('Resume extracted successfully, original length:', resume.length, 'condensed length:', extractionData.condensedResume.length);
+
+      // Step 2: Call the analyze-response function with condensed resume
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-response', {
         body: {
           questionText: question.question,
           userResponse: transcript,
-          resumeContent: resume,
+          resumeContent: extractionData.condensedResume,
           jobDescriptionContent: jobDescription,
           leadershipPrinciple: question.principle,
         },
